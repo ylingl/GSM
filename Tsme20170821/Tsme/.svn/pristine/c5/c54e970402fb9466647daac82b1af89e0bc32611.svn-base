@@ -1,0 +1,132 @@
+﻿<%@ page language="java" import="java.util.*" pageEncoding="utf-8"%>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>实时监控</title>
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="cache-control" content="no-cache">
+<meta http-equiv="expires" content="0">
+<meta http-equiv="description" content="This is my page">
+
+<link rel="stylesheet" href="/Tsme/css/bootstrap/bootstrap.min.css" />
+<link rel="stylesheet" href="/Tsme/css/bootstrap/style.css" />
+<link rel="stylesheet" href="/Tsme/css/spectra/chart.css" />
+
+</head>
+<body>
+	<div style="min-width:1024px; width:100%; text-align:center;">
+		<label style="font-size:20px;">实时告警界面</label>
+		<input type="hidden" name="templateId" value="${templateId}"/>
+		<input type="hidden" name="employ" value="${employ}"/>
+	</div>
+	<div style="margin-left:20px; margin-top:10px;">
+		<form name="deviceParaForm" id="deviceParaForm" action="" onsubmit="submitForm()" style="font-size:10px;">
+			<input type="hidden" name="deviceNum" value="${deviceNum}" /> 
+			<input type="hidden" name="interval" value="500" />
+			<button type="button" id="startButtom" onclick="startMonitor()">开始监控</button>
+			<button type="button" id="stopButtom" onclick="stopMonitor()">停止监控</button>
+		</form>
+	</div>
+	
+	<div id="content">
+		<div id="chart0" class="chart_spline"></div>
+		<div id="warningTable0" class="warningTable">
+			<div id="warningTitle0" class="warningTitle">告警信息列表（<%= new Date() %>）</div>
+			<div id="warningHead0" class="warningHead">
+				<span id="warningN0" class="warningN" style="width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">序号</span>
+				<span id="warningStart0" class="warningStart" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">起始频率</span>
+				<span id="warningStop0" class="warningStop" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">终止频率</span>
+				<span id="warningCenter0" class="warningCenter" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">中心频率</span>
+				<span id="warningNum0" class="warningNum" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">告警次数</span>
+				<span id="warningT0" class="warningT" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">最新告警时间</span>
+				<span id="warningD0" class="warningD" style="width:12%; display:block; border-bottom:1px solid #F00;float:left;">信号解调</span>
+			</div>
+			<div id="warningData0" class="warningData" >
+			</div>
+		</div>
+	</div>
+	<br/>
+	<div id="content">
+		<div id="chart1" class="chart_spline"></div>
+		<div id="warningTable1" class="warningTable">
+			<div id="warningTitle1" class="warningTitle">告警信息列表（<%= new Date() %>）</div>
+			<div id="warningHead1" class="warningHead">
+				<span id="warningN1" class="warningN" style="width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">序号</span>
+				<span id="warningStart1" class="warningStart" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">起始频率</span>
+				<span id="warningStop1" class="warningStop" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">终止频率</span>
+				<span id="warningCenter1" class="warningCenter" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">中心频率</span>
+				<span id="warningNum1" class="warningNum" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">告警次数</span>
+				<span id="warningT1" class="warningT" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">最新告警时间</span>
+				<span id="warningD1" class="warningD" style="width:12%; display:block; border-bottom:1px solid #F00;float:left;">信号解调</span>
+			</div>
+			<div id="warningData1" class="warningData" >
+			</div>
+		</div>
+	</div>
+	<br/>
+	<div id="content">
+		<div id="chart2" class="chart_spline"></div>
+		<div id="warningTable2" class="warningTable">
+			<div id="warningTitle2" class="warningTitle">告警信息列表（<%= new Date() %>）</div>
+			<div id="warningHead2" class="warningHead">
+				<span id="warningN2" class="warningN" style="width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">序号</span>
+				<span id="warningStart2" class="warningStart" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">起始频率</span>
+				<span id="warningStop2" class="warningStop" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">终止频率</span>
+				<span id="warningCenter2" class="warningCenter" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">中心频率</span>
+				<span id="warningNum2" class="warningNum" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">告警次数</span>
+				<span id="warningT2" class="warningT" style="width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00;">最新告警时间</span>
+				<span id="warningD2" class="warningD" style="width:12%; display:block; border-bottom:1px solid #F00;float:left;">信号解调</span>
+			</div>
+			<div id="warningData2" class="warningData" >
+			</div>
+		</div>
+	</div>
+	
+	
+	
+<!-- 弹出部分 -->
+	<div class="modal fade in" id="editmode" tabindex="-1" role="dialog" aria-labelledby="editmodelLabel">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title" id="editmodelLabel">解调结果</h4>
+				</div>
+				<div class="modal-body">
+				<P>
+					L3DecoderResult: System Information Type 3:<br/>
+					Cell Identity:<br/>
+					CIValue: 311, 0x137<br/>
+					Location Area Identification:<br/>
+					Mobile Country Code: 4 6 0<br/>
+					Mobile Network Code: 0 0<br/>
+					Location Area Code: 4138, 0x102A<br/>
+					BCCH NUMBER: 92<br/>
+					Max. TX power level: 5<br/>
+					14 dB RXLEV hysteresis for cell re-selection<br/>
+					Min. received signal level: 13<br/>
+					Cell Bar Qualify: 0<br/>
+					Cell Reselect Offset: 110 dB<br/>
+					Temporary Offset: 0 dB<br/>
+					Penalty Time: 20 s<br/>
+
+				</P>
+				</div>
+			</div>
+		</div>
+	</div>
+<!-- 修改弹出部分结束 -->
+
+	<script type="text/javascript" src="/Tsme/js/jQuery/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" src="/Tsme/js/jQuery/layer/layer.js"></script>
+	<script type="text/javascript" src="/Tsme/js/chart/highcharts.js"></script>
+	<script type="text/javascript" src="/Tsme/js/spectra/chart.js"></script>
+	<script type="text/javascript" src="/Tsme/js/bootstrap/bootstrap.min.js"></script>
+	
+</body>
+</html>

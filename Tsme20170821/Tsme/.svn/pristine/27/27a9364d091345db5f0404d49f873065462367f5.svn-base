@@ -1,0 +1,19 @@
+html,body{
+	width:100%;
+	height:100%;
+	margin:0px;
+	padding:0px;
+	font-family:"Î¢ÈíÑÅºÚ",Microsoft YaHei;
+	font-size:12px;
+}
+
+div, dl, dt,td, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, p, blockquote{
+	list-style:none;
+	margin:0px;
+	padding:0px;
+}
+h1,h2,h3,h4,h5,h6{
+	margin:0px;
+	padding:0px;
+	font-size:14px
+}

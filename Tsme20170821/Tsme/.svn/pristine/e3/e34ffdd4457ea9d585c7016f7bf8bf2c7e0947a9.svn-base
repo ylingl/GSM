@@ -1,0 +1,37 @@
+package utils.task;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+
+import org.apache.log4j.Logger;
+
+public class FileSaveServlet extends HttpServlet {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6515498740371168160L;
+
+	private static Logger logger = Logger.getLogger(FileSaveServlet.class.getName());
+
+	public void destroy() {
+		try {
+			logger.info("监控数据保存程序退出！");
+		} catch (Exception e) {
+			logger.error("退出监控数据保存程序失败。", e);
+			e.printStackTrace();
+		}
+	}
+
+	public void init() throws ServletException {
+		String rootPath = getServletContext().getRealPath("/") + "\\";
+		try {
+			logger.info("启动监控数据保存程序。");
+			Thread thread = new Thread(new TrainingDataFile(rootPath), "MonitorDataFile");
+			thread.start();
+		} catch (Exception e) {
+			logger.error("启动监控数据保存程序失败。", e);
+			e.printStackTrace();
+		}
+	}
+}

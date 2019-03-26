@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+			 xmlns:beans="http://www.springframework.org/schema/beans"
+			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			 xmlns:context="http://www.springframework.org/schema/context"
+			 xsi:schemaLocation="http://www.springframework.org/schema/beans
+								 http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+								 http://www.springframework.org/schema/security
+								 http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+<!-- 启用@Secured：方法安全注释，Service层 -->
+	<global-method-security pre-post-annotations="enabled"/>
+
+<!-- 配置不用过虑的URL -->
+	<http pattern="/index.jsp" security="none"/>
+	<http pattern="/css/**" security="none"/>
+	<http pattern="/images/**" security="none"/>
+	<http pattern="/js/**" security="none"/>
+	<http pattern="/login/**" security="none"/>
+<!-- 配置过滤：
+	myUsernamePasswordAuthenticationFilter所相应的url为/j_spring_security_check；
+	myFilterSecurityInterceptor在系统加载过程中即被调用，顺序为：
+	myFilterSecurityInterceptor，mySecurityMetadataSource，myAccessDecisionManager，authenticationManager。
+-->
+	<http use-expressions="true" entry-point-ref="authenticationEntryPoint">
+		<!-- 配置concurrentSessionFilter -->
+		<custom-filter position="CONCURRENT_SESSION_FILTER" ref="concurrentSessionFilter"/>
+		
+		<!-- 配置自定义的myUsernamePasswordAuthenticationFilter -->
+		<custom-filter before="FORM_LOGIN_FILTER" ref="myUsernamePasswordAuthenticationFilter"/>
+		
+		<http-basic/>
+		
+		<!-- 退出时删除JSESSIONID cookie，不是所有的Servlet容器都支持 -->
+		<logout logout-url="/logout" invalidate-session="true" success-handler-ref="myLogoutSuccessHandler" delete-cookies="JSESSIONID"/>
+		
+		<!-- 配置自定义过滤器 -->
+		<custom-filter before="FILTER_SECURITY_INTERCEPTOR" ref="myFilterSecurityInterceptor"/>
+		
+		<!-- 配置session management 设置超时后session的跳转路径
+		<session-management invalid-session-url="/security/login/registerAndLogin" session-authentication-strategy-ref="sas"/> -->
+	
+		<!-- 配置access deny management -->
+		<access-denied-handler error-page="/login/login"/> 
+	</http>
+	
+<!-- logoutSuccessHandler的配置内容 -->	
+	<beans:bean id="myLogoutSuccessHandler" class="security.logout.MyLogoutSuccessHandler"/>
+	
+<!-- concurrentSessionFilter的配置内容 -->
+	<beans:bean id="concurrentSessionFilter" class="org.springframework.security.web.session.ConcurrentSessionFilter">
+		<beans:property name="sessionRegistry" ref="sessionRegistry"/>
+		<beans:property name="expiredUrl" value="/login/login"/><!-- session过期后的跳转路径 -->
+	</beans:bean>
+	<beans:bean id="sessionRegistry" class="org.springframework.security.core.session.SessionRegistryImpl"/>
+
+<!-- 配置myUsernamePasswordAuthenticationFilter，用于验证码核查，验证用户名与口令 -->
+	<beans:bean id="myUsernamePasswordAuthenticationFilter" class="security.filter.MyUsernamePasswordAuthenticationFilter">
+		<beans:property name="filterProcessesUrl" value="/j_spring_security_check"/>
+		<!-- 认证成功处理 -->
+		<beans:property name="authenticationSuccessHandler" ref="loginLogAuthenticationSuccessHandler"/>
+		<!-- 认证失败处理 -->
+		<beans:property name="authenticationFailureHandler" ref="simpleUrlAuthenticationFailureHandler"/>
+		<beans:property name="authenticationManager" ref="authenticationManager"/>
+		<beans:property name="sessionAuthenticationStrategy" ref="sas"/><!-- ????为什么在这里加，有必要吗？ -->
+	</beans:bean>
+	
+	<!-- 配置authenticationEntryPoint -->
+	<beans:bean id="authenticationEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+		<beans:property name="loginFormUrl" value="/login/login"/>
+	</beans:bean>
+	
+	<!-- 配置loginLogAuthenticationSuccessHandler -->
+	<beans:bean id="loginLogAuthenticationSuccessHandler" class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">  
+		<beans:property name="defaultTargetUrl" value="/map/mapIndex"/>
+	</beans:bean>
+	
+	<!-- 配置simpleUrlAuthenticationFailureHandler -->
+	<beans:bean id="simpleUrlAuthenticationFailureHandler" class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+		<beans:property name="defaultFailureUrl" value="/login/login"/>
+	</beans:bean>
+	
+	<!-- 认证管理器，实现用户认证的入口，主要实现UserDetailsService接口即可 -->
+	<authentication-manager alias="authenticationManager">
+		<authentication-provider user-service-ref="myUserDetailService">
+			<password-encoder hash="md5">
+				<!-- 用户名做为盐值 -->
+				<salt-source user-property="name"/>
+			</password-encoder>
+		</authentication-provider>
+	</authentication-manager>
+	<beans:bean id="myUserDetailService" class="security.implementations.MyUserDetailService"/>
+
+<!-- 配置自定义过滤器 -->
+	<beans:bean id="myFilterSecurityInterceptor" class="security.filter.MyFilterSecurityInterceptor">
+		<beans:property name="authenticationManager" ref="authenticationManager"/>
+		<beans:property name="accessDecisionManager" ref="myAccessDecisionManager"/>
+		<beans:property name="securityMetadataSource" ref="mySecurityMetadataSource"/>
+	</beans:bean>
+	<!-- 访问决策器，决定某个用户具有的角色，是否有足够的权限去访问某个资源 -->
+    <beans:bean id="myAccessDecisionManager" class="security.implementations.MyAccessDecisionManager"/>
+    <!-- 资源源数据定义，即定义某一资源可以被哪些角色访问 -->
+    <beans:bean id="mySecurityMetadataSource" class="security.implementations.MyFilterInvocationSecurityMetadataSource"/>
+	
+<!-- session management的配置内容，这里只配置了最大session数 -->
+	<beans:bean id="sas" class="org.springframework.security.web.authentication.session.ConcurrentSessionControlStrategy">
+		<beans:constructor-arg name="sessionRegistry" ref="sessionRegistry"/>
+		<beans:property name="maximumSessions" value="1" />
+	</beans:bean>
+
+</beans:beans>

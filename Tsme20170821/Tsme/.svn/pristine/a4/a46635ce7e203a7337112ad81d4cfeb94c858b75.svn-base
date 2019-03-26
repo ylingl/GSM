@@ -1,0 +1,327 @@
+package mvc.spectra;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import logic.data.DataAnalysis;
+import logic.data.bean.BeanAvg;
+import net.sf.json.JSONObject;
+import tsme.table.frequencyBand.bean.FREQUENCYBAND;
+import tsme.table.warningLine.DAO.WarningLineDAO;
+import tsme.table.warningTemplate.DAO.WarningTemplateDAO;
+import tsme.table.warningTemplate.bean.WARNINGTEMPLATE;
+import utils.AddressTool;
+import utils.DataPoolTools;
+import utils.MonitorCopy;
+import utils.MonitorParameter;
+import utils.MonitorParameter.status_enum;
+import utils.ResponseTools;
+import utils.task.TrainingDataFile;
+import utils.task.WaringDataFile;
+
+@Controller
+public class SpectraController {
+	
+	@Autowired
+	@Qualifier("dataAnalysisService")
+	DataAnalysis dataAnalysis;
+	
+	@Autowired
+	@Qualifier("warningLineDAO")
+	private WarningLineDAO warningLineDAO;
+	
+	@Autowired
+	@Qualifier("warningTemplateDAO")
+	private WarningTemplateDAO warningTemplateDAO;
+	
+	
+	/**
+	 * 客户端使用地图上点击：获取模板列表。
+	 * @param monitorParameter
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getWarningTemplateList")
+	public void getWarningTemplateList(String deviceNum, HttpServletResponse response){
+		JSONObject jsObj = new JSONObject();
+		
+		DataPoolTools.clearOverTimeMonitor();//清除超时的监控
+		
+		if(DataPoolTools.monitorReportStatusMap.containsKey(deviceNum)){
+			if(!DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){
+				List<WARNINGTEMPLATE> warningTemplateList = dataAnalysis.getWarningTemplateIdAndNameListByDeviceNum(deviceNum);
+				jsObj.put("warningTemplateList", warningTemplateList);
+				jsObj.put("employ", false);
+			} else {
+				if(DataPoolTools.monitorDeviceMap.get(deviceNum).isWarning()){
+					jsObj.put("employ", true);
+				}
+				else{
+					jsObj.put("offline", true);
+				}
+			}
+			jsObj.put("offline", false);
+		} else {
+			jsObj.put("offline", true);
+		}
+		
+		ResponseTools.writeResponse(response, jsObj.toString());
+		
+	}
+	
+	/**
+	 * 客户端使用地图上点击：进入监控页面，此方法只需要记录下来这个templateId和设备id即可。
+	 * @param monitorParameter
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("chart")
+	public ModelAndView chart(String deviceNum, String templateId) {
+		ModelAndView mav = new ModelAndView();
+		
+		if(DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){	
+			mav.addObject("employ", 1);
+		} else {
+			mav.addObject("employ", 0);
+		}
+		
+		mav.addObject("deviceNum", deviceNum);
+		
+		if(templateId == null && DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){
+			templateId = DataPoolTools.monitorDeviceMap.get(deviceNum).getTemplateId();
+		}
+		
+		mav.addObject("templateId", templateId);
+		
+		mav.setViewName("chart");
+		return mav;
+	}
+	
+	/**
+	 * 客户端使用地图上点击：进入监控页面，此方法只需要记录下来这个templateId和设备id即可。
+	 * @param monitorParameter
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getSpectraPrePara")
+	public SpectraPrePara getSpectraPrePara(String deviceNum, String templateId){
+		
+		WARNINGTEMPLATE warningTemplate = warningTemplateDAO.findWarningTemplateByIdAndSortByStartFrequency(templateId);
+		
+		if(!DataPoolTools.monitorReportStatusMap.containsKey(deviceNum)
+			|| DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){	
+			return new SpectraPrePara();
+		}
+		
+		MonitorParameter monitorParameter = new MonitorParameter();
+		SpectraPrePara spectraPrePara = new SpectraPrePara();
+		
+		spectraPrePara.setTemplateName(warningTemplate.getTemplate_name());
+		
+		monitorParameter.setOverTime_minute(30);
+		monitorParameter.setStatus(status_enum.stop);
+		monitorParameter.setLastPopDataTime(System.currentTimeMillis());
+		monitorParameter.setTemplateId(templateId);
+		monitorParameter.setTraining(false);
+		monitorParameter.setWarning(true);
+		
+		List<Float> frequencyList = new ArrayList<Float>();
+		for(FREQUENCYBAND frequencyBand : warningTemplate.getFrequencyBandList()){
+			frequencyList.add(frequencyBand.getStartFrequency());
+			frequencyList.add(frequencyBand.getStopFrequency());
+		}
+		
+		monitorParameter.setFrequencyList(frequencyList);
+		spectraPrePara.setFrequencyList(frequencyList);
+		
+		Map<String, List<List<Float>>> warningLineMap = new HashMap<String, List<List<Float>>>();
+		warningLineMap.putAll(dataAnalysis.getWarningLine(templateId));
+		monitorParameter.setWarningLineMap(warningLineMap);
+		spectraPrePara.setWarningLineMap(warningLineMap);
+		
+		Map<String, List<BeanAvg>> warningPointMap = new HashMap<String, List<BeanAvg>>();
+		warningPointMap.putAll(warningLineDAO.findPointListByTemplateId(templateId));
+		monitorParameter.setWarningPointMap(warningPointMap);
+		
+		monitorParameter.setFftSize(warningTemplate.getFftSize());
+		spectraPrePara.setFftSize(warningTemplate.getFftSize());
+		monitorParameter.setBandWidth(warningTemplate.getBandWidth());
+		spectraPrePara.setBandWidth(warningTemplate.getBandWidth());
+		monitorParameter.setMaxMeans(5000);
+		spectraPrePara.setMaxMeans(5000);
+		
+		spectraPrePara.setLongitude(DataPoolTools.monitorReportStatusMap.get(deviceNum).getLongitude());
+		spectraPrePara.setLatitude(DataPoolTools.monitorReportStatusMap.get(deviceNum).getLatitude());
+		spectraPrePara.setMyself(true);
+		
+		DataPoolTools.monitorDeviceMap.put(deviceNum, monitorParameter);
+		
+		if(DataPoolTools.monitorShowPool.containsKey(deviceNum)){
+			DataPoolTools.monitorShowPool.get(deviceNum).setSpectraPrePara(spectraPrePara);;
+		} else {
+			MonitorCopy monitorCopy = new MonitorCopy();
+			monitorCopy.setSpectraPrePara(spectraPrePara);
+			DataPoolTools.monitorShowPool.put(deviceNum, monitorCopy);
+		}
+
+		return spectraPrePara;
+	}
+	
+	
+	/**
+	 * 只有主监控设备开始监控某个设备的时候调用，需要传入客户端id,监控设备id和监控条件
+	 * @param monitorParameter
+	 * @param response 如果请求的是发现有别的pc开启了同一个设备的监控，则返回false，表示此pc只能变为查看角色
+	 * @throws Exception 
+	 */
+	@RequestMapping("startRealTimeMonitor")
+	public void startRealTimeMonitor(String deviceNum, HttpServletResponse response, HttpServletRequest request) throws Exception {
+
+		if(!DataPoolTools.monitorDeviceMap.containsKey(deviceNum)) {
+			return;
+		}
+		
+		MonitorParameter monitorParameter = DataPoolTools.monitorDeviceMap.get(deviceNum);
+		
+		if(monitorParameter.isTraining()){
+			return;
+		}
+		
+		HashMap<String, Queue<ArrayList<Float>>> monitorDataMap = new HashMap<String, Queue<ArrayList<Float>>>();
+		for(String key : monitorParameter.getWarningLineMap().keySet()){
+			monitorDataMap.put(key, new LinkedList<ArrayList<Float>>());
+		}	
+		
+		JSONObject jsObj = new JSONObject();
+		
+		if(DataPoolTools.monitorDeviceMap.get(deviceNum).getClientId() == null) {
+			monitorParameter.setClientId(AddressTool.getRemoteIPAddr(request));
+			
+			Thread thread = new Thread(new WaringDataFile(deviceNum), deviceNum);
+			thread.start();
+			
+			DataPoolTools.monitorDataPool.put(deviceNum, monitorDataMap);
+			
+			System.err.println(deviceNum + " == 开始监测数据");
+			monitorParameter.setStatus(status_enum.start);
+			monitorParameter.setOverTime_minute(10);
+			
+			jsObj.put("result", true);
+			
+		} else {
+				
+			jsObj.put("result", false);
+			
+		}
+		
+		DataPoolTools.monitorDeviceMap.put(deviceNum, monitorParameter);
+
+		ResponseTools.writeResponse(response, jsObj.toString());
+	}
+	
+	
+	/**
+	 * 浏览器获取监控数据
+	 * @param monitorParameter
+	 * @param response
+	 * @return 返回请求数据。如果是主监控发起的请求数据，则从缓冲池获取一条数据。如果是查看pc获取数据，则获取主pc上次获取的数据。
+	 * 如果查看pc获取的是，发现主pc已经停止监控了，则返回一个标志，说明主pc已经停止监控，您可以设置参数变为主监控pc了。
+	 * @throws Exception 
+	 */
+	@ResponseBody
+	@RequestMapping("getRealTimeMonitorData")
+	public SpectraData getRealTimeMonitorData(String deviceNum, HttpServletRequest request) throws Exception{
+		//Calendar c = Calendar.getInstance();
+		
+		SpectraData spectraDataMap = DataPoolTools.warningPool.get(deviceNum);
+
+		return spectraDataMap;
+	}
+	
+	@RequestMapping("stopRealTimeMonitor")
+	public void stopRealTimeMonitor(String deviceNum, HttpServletRequest request, HttpServletResponse response){
+		
+		DataPoolTools.clearOverTimeMonitor();//清除超时的监控
+		
+		JSONObject jsObj = new JSONObject();
+		
+		if(DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){
+			MonitorParameter mp = DataPoolTools.monitorDeviceMap.get(deviceNum);
+			if(mp.getClientId() == null || mp.getClientId().equals(AddressTool.getRemoteIPAddr(request))) {
+				mp.setWarning(false);
+				mp.setStatus(status_enum.stop);//只有主监控端 client,才能发送停止监控的请求
+				System.err.println(deviceNum + " == 停止监测数据======");
+				
+				jsObj.put("result", true);
+			} else {
+				jsObj.put("result", false);
+			}
+		} else {
+			jsObj.put("result", false);
+		}
+		
+		ResponseTools.writeResponse(response, jsObj.toString());
+	}
+	
+	
+	@ResponseBody
+	@RequestMapping("getSpectraPreParaCopy")
+	public SpectraPrePara getSpectraPreParaCopy(String deviceNum, HttpServletRequest request){
+		
+		SpectraPrePara spectraPrePara = DataPoolTools.monitorShowPool.get(deviceNum).getSpectraPrePara();
+		
+		if(DataPoolTools.monitorDeviceMap.get(deviceNum).getClientId() == null
+			|| DataPoolTools.monitorDeviceMap.get(deviceNum).getClientId().equals(AddressTool.getRemoteIPAddr(request))){
+			spectraPrePara.setMyself(true);
+		} else {
+			spectraPrePara.setMyself(false);
+		}
+		
+		return spectraPrePara;
+		
+	}
+	
+	
+	@ResponseBody
+	@RequestMapping("showSpectrum")
+	public HashMap<String, ArrayList<Float>> showSpectrum(String deviceNum){
+		HashMap<String, ArrayList<Float>> spectrumMap = new HashMap<String, ArrayList<Float>>();
+		
+		if(DataPoolTools.showDataPool.containsKey(deviceNum)) {
+			for(String key : DataPoolTools.showDataPool.get(deviceNum).keySet()){
+				spectrumMap.put(key, DataPoolTools.showDataPool.get(deviceNum).get(key).poll());
+				//System.out.println("showDataPoolDepth:" + DataPoolTools.showDataPool.get(deviceNum).get(key).size());
+			}
+			
+		}
+		
+		return spectrumMap;
+		
+	}
+
+	
+	/**
+	 * 获取数据文件
+	 * @param response
+	 */
+	@ResponseBody
+	@RequestMapping("getJsFileList")
+	public ArrayList<String> getJsFileList(HttpServletResponse response){
+		return TrainingDataFile.getDataFileList();
+	}
+	
+}

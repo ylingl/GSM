@@ -1,0 +1,16 @@
+package utils;
+
+import javax.servlet.http.HttpSession;
+
+public class ClearHttpSessionAttribute {
+
+	public ClearHttpSessionAttribute(HttpSession httpSession){
+		
+		httpSession.removeAttribute("currentDeviceNum");
+		httpSession.removeAttribute("currentClientId");
+		
+		httpSession.removeAttribute("currentWarningTemplateId");
+		httpSession.removeAttribute("currentWarningTemplateLine");
+
+	}
+}

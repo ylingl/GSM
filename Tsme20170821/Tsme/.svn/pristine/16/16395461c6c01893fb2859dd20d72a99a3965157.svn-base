@@ -1,0 +1,9 @@
+package tsme.table.supervisor.DAO;
+
+import security.MyUserDetails.MyUserDetails;
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPractice;
+import tsme.table.supervisor.bean.SUPERVISOR;
+
+public interface SupervisorDAO extends TsmeMainDAOPractice<SUPERVISOR>{
+	public MyUserDetails findAccountByUsername(String username);
+}

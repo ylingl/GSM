@@ -1,0 +1,1278 @@
+/**
+ * 模板训练js
+ */
+ 
+var chart0;
+var chart1;
+var chart2;
+
+var key0;
+var key1;
+var key2;
+
+var moniterTimer = null;
+
+var ymin = -130;
+var ymax = -30;
+var ytick = 10;
+var xtick = 0.2;
+
+var templateName = '';
+var fftSize = 0;
+var bandWidth = 0;
+var maxMeans = 0;
+var deviceNum = "";
+
+var avgArray = new Array();//均线数组
+var warningLine = new Array();//预警线
+var warningTemplateArray = new Array();//下拉框中的预警模板信息
+
+
+$(function(){
+	//js初始化
+	initTemplate();
+	btnInit();
+	deviceNum = $("#submitdata #deviceNum").val();
+});
+
+function initTemplate(){
+	$.ajax({
+		url : "/Tsme/data/getWarningTemplatesWithStatus",
+		type : "get",
+		dataType : 'json',
+		success : function(data) {
+			if (data != null) {
+				for(var i = 0; i < data.warningTemplateList.length; i ++){
+					//console.log(warningTemplateArray[i].id+" "+warningTemplateArray[i].template_name);
+					warningTemplateArray[data.warningTemplateList[i].id] = data.warningTemplateList[i];
+					$("#warningTemplateSelect").append("<option value='" + data.warningTemplateList[i].id + "'>" + data.warningTemplateList[i].template_name + "</option>");
+				}
+				//console.log(warningTemplateArray);
+				if(data.employ) {
+					if(!data.myself){
+						layer.alert("其他用户正在训练该设备，您目前不能进行任何训练操作！");
+						operatorRemove();
+					} else {
+						btnChangeBegin();
+					}
+					
+					var currentWarningTemplate = data.currentwarningTemplate;
+					templateName = currentWarningTemplate.template_name;
+					fftSize = currentWarningTemplate.fftSize;
+					maxMeans = currentWarningTemplate.maxMeans;
+					
+					var frequencyBandList = currentWarningTemplate.frequencyBandList;
+					
+					$("#modifyForm #warningLineGroup").empty();
+					
+					for(var i = 0; i < frequencyBandList.length; i ++) {
+						switch (i){
+						case 0 :
+							var startFrequency0 = frequencyBandList[0].startFrequency;
+							var stopFrequency0 = frequencyBandList[0].stopFrequency;
+							var parameter0 = "起始频率:" + startFrequency0 + 
+							"MHz; 终止频率:" + stopFrequency0 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+							
+							key0 = startFrequency0.toFixed(1) + "-" + stopFrequency0.toFixed(1);
+							if($("input[type=radio][name=groupNum][value='" + key0 +"']").length == 0)
+								$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key0 + "'/>第一组&nbsp;");
+							
+							hightchart0("chart0", templateName, parameter0, stopFrequency0, startFrequency0);
+							chart0.addSeries({                       
+							    id: "realTime",
+							    name: "实时谱线",
+							    type: 'line',
+							    visible: true,
+							    data: 0
+							},true);
+							
+							break;
+						case 1 :
+							var startFrequency1 = frequencyBandList[1].startFrequency;
+							var stopFrequency1 = frequencyBandList[1].stopFrequency;
+							var parameter1 = "起始频率:" + startFrequency1 + 
+							"MHz; 终止频率:" + stopFrequency1 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+							
+							if($("#chart1").length==0){
+								$("#chart0").after("<br/><div id='chart1' style='height:400px; width:100%;'></div>")
+							}
+							
+							key1 = startFrequency1.toFixed(1) + "-" + stopFrequency1.toFixed(1);
+							if($("input[type=radio][name=groupNum][value='" + key1 +"']").length == 0)
+								$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key1 + "'/>第二组&nbsp;");
+							
+							hightchart1("chart1", templateName, parameter1, stopFrequency1, startFrequency1);
+							chart1.addSeries({                       
+							    id: "realTime",
+							    name: "实时谱线",
+							    type: 'line',
+							    visible: true,
+							    data: 0
+							},true);
+							
+							break;
+						case 2 :
+							var startFrequency2 = frequencyBandList[2].startFrequency;
+							var stopFrequency2 = frequencyBandList[2].stopFrequency;
+							var parameter2 = "起始频率:" + startFrequency2 + 
+							"MHz; 终止频率:" + stopFrequency2 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+							
+							if($("#chart2").length==0){
+								$("#chart1").after("<br/><div id='chart2' style='height:400px; width:100%;'></div>");
+							}
+							
+							key2 = startFrequency2.toFixed(1) + "-" + stopFrequency2.toFixed(1);
+							if($("input[type=radio][name=groupNum][value='" + key2 +"']").length == 0)
+								$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key2 + "'/>第三组&nbsp;");
+							
+							hightchart2("chart2", templateName, parameter2, stopFrequency2, startFrequency2);
+							chart2.addSeries({                       
+							    id: "realTime",
+							    name: "实时谱线",
+							    type: 'line',
+							    visible: true,
+							    data: 0
+							},true);
+							
+							break;
+						}
+					}
+					
+					if(moniterTimer == null) {
+						setTimeout(function(){
+							moniterTimer = setInterval(function() {
+								getMonitorData();
+							}, 500);
+						},500);
+					}
+				}
+			}
+		}
+	});
+}
+
+function showTemplateDetail(){
+	layer.msg('数据装载中，请稍候...', {icon: 1});
+	
+	var templateId = $("#warningTemplateSelect").val();
+	resetChart(warningTemplateArray[templateId]);
+	
+	btnCreatingAvg();
+	
+	$.ajax({
+		url : "/Tsme/data/getAvgDataList/"+templateId+"/9",
+		type : "get",
+		dataType : 'json',
+		success : function(data) {
+			if(data != null){
+				layer.msg('正在绘图，请稍候...', {icon: 1});
+				var avgMap = data;
+				//console.log(avgMap);
+				for (var key in avgMap){
+					switch (key) {
+					case key0:
+						avgArray = avgMap[key];
+						for(var i = 1 ; i <= avgArray.length; i ++){
+							//console.log(avgArray[i-1]);
+							if(avgArray[i-1].length > 0){
+								chart0.addSeries({                       
+								    id: "a"+i,
+								    name: "第 "+i+" 级特征线",
+								    type: 'line',
+								    visible: true,
+								    data: avgArray[i-1]
+									},true);
+							}
+						}
+						break;
+					case key1:
+						avgArray = avgMap[key];
+						for(var i = 1 ; i <= avgArray.length; i ++){
+							//console.log(avgArray[i-1]);
+							if(avgArray[i-1].length > 0){
+								chart1.addSeries({                       
+								    id: "a"+i,
+								    name: "第 "+i+" 级特征线",
+								    type: 'line',
+								    visible: true,
+								    data: avgArray[i-1]
+									},true);
+							}
+						}
+						break;
+					case key2:
+						avgArray = avgMap[key];
+						for(var i = 1 ; i <= avgArray.length; i ++){
+							//console.log(avgArray[i-1]);
+							if(avgArray[i-1].length > 0){
+								chart2.addSeries({                      
+								    id: "a"+i,
+								    name: "第 "+i+" 级特征线",
+								    type: 'line',
+								    visible: true,
+								    data: avgArray[i-1]
+									},true);
+							}
+						}
+						break;
+					}
+				}
+			}
+			
+			layer.msg('绘制预警曲线！', {icon: 1});
+			
+			$.ajax({
+				url : "/Tsme/data/getWarningLine/"+templateId,
+				type : "get",
+				dataType : 'json',
+				success : function(data) {
+					if(data != null){
+						var warnLineMap = data;
+						//console.log(warnLineMap);
+						for (var key in warnLineMap){
+							switch (key) {
+							case key0:
+								if(chart0.get("w") != null)
+									chart0.get("w").remove();
+								chart0.addSeries({                       
+								    id:"w",
+								    name:"预警线",
+								    type: 'line',
+								    visible: true,
+								    data: warnLineMap[key]
+									},true);
+								break;
+							case key1:
+								if(chart1.get("w") != null)
+									chart1.get("w").remove();
+								chart1.addSeries({                       
+								    id:"w",
+								    name:"预警线",
+								    type: 'line',
+								    visible: true,
+								    data: warnLineMap[key]
+									},true);
+								break;
+							case key2:
+								if(chart2.get("w") != null)
+									chart2.get("w").remove();
+								chart2.addSeries({                       
+								    id:"w",
+								    name:"预警线",
+								    type: 'line',
+								    visible: true,
+								    data: warnLineMap[key]
+									},true);
+								break;
+							}
+						}
+					}
+					layer.msg('特征曲线绘制完毕', {icon: 1});
+				}
+			});
+			
+			btnView();
+		}
+	});
+	
+	
+}
+
+function resetChart(obj){
+	
+	templateName = obj.template_name;
+	fftSize = obj.fftSize;
+	bandWidth = obj.bandWidth;
+	maxMeans = obj.maxMeans;
+	
+	var frequencyBandList = obj.frequencyBandList;
+	
+	$("#modifyForm #warningLineGroup").empty();
+	
+	for(var i = 0; i < frequencyBandList.length; i ++){
+		switch (i){
+		case 0 :
+			var startFrequency0 = frequencyBandList[0].startFrequency;
+			var stopFrequency0 = frequencyBandList[0].stopFrequency;
+			var parameter0 = "起始频率:" + startFrequency0 + 
+			"MHz; 终止频率:" + stopFrequency0 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+			
+			key0 = startFrequency0.toFixed(1) + "-" + stopFrequency0.toFixed(1);
+			if($("input[type=radio][name=groupNum][value='" + key0 +"']").length == 0)
+				$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key0 + "'/>第一组&nbsp;");
+			
+			hightchart0("chart0", templateName, parameter0, stopFrequency0, startFrequency0);
+			
+			break;
+		case 1 :
+			var startFrequency1 = frequencyBandList[1].startFrequency;
+			var stopFrequency1 = frequencyBandList[1].stopFrequency;
+			var parameter1 = "起始频率:" + startFrequency1 + 
+			"MHz; 终止频率:" + stopFrequency1 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+			
+			if($("#chart1").length==0){
+				$("#chart0").after("<br/><div id='chart1' style='height:400px; width:100%;'></div>")
+			}
+			
+			key1 = startFrequency1.toFixed(1) + "-" + stopFrequency1.toFixed(1);
+			if($("input[type=radio][name=groupNum][value='" + key1 +"']").length == 0)
+				$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key1 + "'/>第二组&nbsp;");
+			
+			hightchart1("chart1", templateName, parameter1, stopFrequency1, startFrequency1);
+			
+			break;
+		case 2 :
+			var startFrequency2 = frequencyBandList[2].startFrequency;
+			var stopFrequency2 = frequencyBandList[2].stopFrequency;
+			var parameter2 = "起始频率:" + startFrequency2 + 
+			"MHz; 终止频率:" + stopFrequency2 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+			
+			if($("#chart2").length==0){
+				$("#chart1").after("<br/><div id='chart2' style='height:400px; width:100%;'></div>");
+			}
+			
+			key2 = startFrequency2.toFixed(1) + "-" + stopFrequency2.toFixed(1);
+			if($("input[type=radio][name=groupNum][value='" + key2 +"']").length == 0)
+				$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key2 + "'/>第三组&nbsp;");
+			
+			hightchart2("chart2", templateName, parameter2, stopFrequency2, startFrequency2);
+			
+			break;
+		}
+	}
+}
+
+function hightchart0(containerId, templateName, parameter, stopFrequency, startFrequency) {
+	chart0 = new Highcharts.Chart({
+		chart : {
+			backgroundColor : '#FDF5E6',
+			renderTo : containerId, //图表放置的容器，DIV 
+			defaultSeriesType : 'line', //图表类型为折线图 
+			zoomType : 'xy',
+			events : {
+				load : function() {
+					var series = this.series[0];
+				}
+			}
+		},
+		title : {
+			text : templateName //图表标题 
+		},
+		subtitle: {
+			text: parameter
+		},
+		xAxis : { //设置X轴 
+			max : stopFrequency, //x轴最大值 
+			min : startFrequency,
+			gridLineColor : '#999',
+			gridLineWidth : 1,
+			//tickPixelInterval : 100, //X轴标签间隔 
+			tickInterval: xtick,
+			title : {
+				text : '频率(MHz)'
+			}
+		},
+		yAxis : { //设置Y轴 
+			max : ymax, //Y轴最大值 
+			min : ymin, //Y轴最小值 
+			//tickPixelInterval : 100,//y轴标签间隔 
+			tickInterval: ytick,
+			title : {
+				text : '电平值(dBm)'
+			}
+		},
+		legend : {
+			layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderWidth: 0
+            /*layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            borderWidth: 0*/
+		},
+		credits : {
+			text : '频谱图' //设置LOGO区文字 
+		}
+	});
+}
+
+function hightchart1(containerId, templateName, parameter, stopFrequency, startFrequency) {
+	chart1 = new Highcharts.Chart({
+		chart : {
+			backgroundColor : '#FDF5E6',
+			renderTo : containerId, //图表放置的容器，DIV 
+			defaultSeriesType : 'line', //图表类型为折线图 
+			zoomType : 'xy',
+			events : {
+				load : function() {
+					var series = this.series[0];
+				}
+			}
+		},
+		title : {
+			text : templateName //图表标题 
+		},
+		subtitle: {
+			text: parameter
+		},
+		xAxis : { //设置X轴 
+			max : stopFrequency, //x轴最大值 
+			min : startFrequency,
+			gridLineColor : '#999',
+			gridLineWidth : 1,
+			//tickPixelInterval : 100, //X轴标签间隔 
+			tickInterval: xtick,
+			title : {
+				text : '频率(MHz)'
+			}
+		},
+		yAxis : { //设置Y轴 
+			max : ymax, //Y轴最大值 
+			min : ymin, //Y轴最小值 
+			//tickPixelInterval : 100,//y轴标签间隔 
+			tickInterval: ytick,
+			title : {
+				text : '电平值(dBm)'
+			}
+		},
+		legend : {
+			layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderWidth: 0
+            /*layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            borderWidth: 0*/
+		},
+		credits : {
+			text : '频谱图' //设置LOGO区文字 
+		}
+	});
+}
+
+function hightchart2(containerId, templateName, parameter, stopFrequency, startFrequency) {
+	chart2 = new Highcharts.Chart({
+		chart : {
+			backgroundColor : '#FDF5E6',
+			renderTo : containerId, //图表放置的容器，DIV 
+			defaultSeriesType : 'line', //图表类型为折线图 
+			zoomType : 'xy',
+			events : {
+				load : function() {
+					var series = this.series[0];
+				}
+			}
+		},
+		title : {
+			text : templateName //图表标题 
+		},
+		subtitle: {
+			text: parameter
+		},
+		xAxis : { //设置X轴 
+			max : stopFrequency, //x轴最大值 
+			min : startFrequency,
+			gridLineColor : '#999',
+			gridLineWidth : 1,
+			//tickPixelInterval : 100, //X轴标签间隔 
+			tickInterval: xtick,
+			title : {
+				text : '频率(MHz)'
+			}
+		},
+		yAxis : { //设置Y轴 
+			max : ymax, //Y轴最大值 
+			min : ymin, //Y轴最小值 
+			//tickPixelInterval : 100,//y轴标签间隔 
+			tickInterval: ytick,
+			title : {
+				text : '电平值(dBm)'
+			}
+		},
+		legend : {
+			layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderWidth: 0
+            /*layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            borderWidth: 0*/
+		},
+		credits : {
+			text : '频谱图' //设置LOGO区文字 
+		}
+	});
+}
+
+/**
+ * 开始监测
+ */
+function startMonitor() {
+	if(moniterTimer != null) { return; }
+	
+	templateName = $("#submitdata #template").val();
+	fftSize = $("#submitdata #fftSize").val();
+	bandWidth = $("#submitdata #bandWidth").val();
+	maxMeans = $("#submitdata #maxMeans").val();
+	
+	$("#modifyForm #warningLineGroup").empty();
+	
+	if($("#submitdata #stopFrequency0").val() > 0) {
+		var startFrequency0 = parseFloat($("#submitdata #startFrequency0").val());
+		var stopFrequency0 = parseFloat($("#submitdata #stopFrequency0").val());
+		var parameter0 = "起始频率:" + startFrequency0 + 
+		"MHz; 终止频率:" + stopFrequency0 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+		
+		key0 = startFrequency0.toFixed(1) + "-" + stopFrequency0.toFixed(1);
+		
+		$.ajax({
+			url : "/Tsme/data/startRecord",
+			type : "POST",
+			async : true,
+			data : $("#submitdata").serialize(),
+			dataType : 'json',
+			success : function(data) {
+				if (data.result) {
+					hightchart0("chart0", templateName, parameter0, stopFrequency0, startFrequency0);
+					chart0.addSeries({                       
+					    id: "realTime",
+					    name: "实时谱线",
+					    type: 'line',
+					    visible: true,
+					    data: 0
+					},true);
+					
+					if($("input[type=radio][name=groupNum][value='" + key0 +"']").length == 0)
+						$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key0 + "'/>第一组&nbsp;");
+					
+					if($("#submitdata #stopFrequency1").val() > 0) {
+						var startFrequency1 = parseFloat($("#submitdata #startFrequency1").val());
+						var stopFrequency1 = parseFloat($("#submitdata #stopFrequency1").val());
+						var parameter1 = "起始频率:" + startFrequency1 + 
+						"MHz; 终止频率:" + stopFrequency1 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+						
+						if($("#chart1").length==0){
+							$("#chart0").after("<br/><div id='chart1' style='height:400px; width:100%;'></div>")
+						}
+						
+						key1 = startFrequency1.toFixed(1) + "-" + stopFrequency1.toFixed(1);
+						
+						if($("input[type=radio][name=groupNum][value='" + key1 +"']").length == 0)
+							$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key1 + "'/>第二组&nbsp;");
+						
+						hightchart1("chart1", templateName, parameter1, stopFrequency1, startFrequency1);
+						chart1.addSeries({                       
+						    id: "realTime",
+						    name: "实时谱线",
+						    type: 'line',
+						    visible: true,
+						    data: 0
+						},true);
+					}
+					
+					if($("#submitdata #stopFrequency2").val() > 0) {
+						var startFrequency2 = parseFloat($("#submitdata #startFrequency2").val());
+						var stopFrequency2 = parseFloat($("#submitdata #stopFrequency2").val());
+						var parameter2 = "起始频率:" + startFrequency2 + 
+						"MHz; 终止频率:" + stopFrequency2 + "MHz; FFT步长:" + fftSize + "; 同步频率:" + maxMeans + "Hz";
+						
+						if($("#chart2").length==0){
+							$("#chart1").after("<br/><div id='chart2' style='height:400px; width:100%;'></div>")
+						}
+						
+						key2 = startFrequency2.toFixed(1) + "-" + stopFrequency2.toFixed(1);
+						
+						if($("input[type=radio][name=groupNum][value='" + key2 +"']").length == 0)
+							$("#modifyForm #warningLineGroup").append("<input name='groupNum' type='radio' value='" + key2 + "'/>第三组");
+						
+						hightchart2("chart2", templateName, parameter2, stopFrequency2, startFrequency2);
+						chart2.addSeries({                       
+						    id: "realTime",
+						    name: "实时谱线",
+						    type: 'line',
+						    visible: true,
+						    data: 0
+						},true);
+					}
+					
+					setTimeout(function(){
+						moniterTimer = setInterval(function() {
+							getMonitorData();
+						}, 500);
+					},500);
+					
+					warningTemplateArray[data.template.id] = data.template;
+					$("#warningTemplateSelect").prepend("<option value='"+ data.template.id+"'>"+ data.template.template_name+"</option>");
+					$("#warningTemplateSelect option[value='"+data.template.id+"']").attr("selected", true);
+					btnChangeBegin();
+				} else {
+					if(data.type == 1){
+						layer.alert("监测设备已被占用，您不能进行训练！");
+					}
+					if(data.type == 2){
+						layer.alert("监测设备未在线，您不能进行训练！");
+					}
+				}
+			}
+		})
+	}
+}
+
+
+/**
+ * 监测获取数据
+ */
+function getMonitorData() {
+	$.ajax({
+		url : "/Tsme/spectra/showSpectrum",
+		type : "POST",
+		data : {deviceNum:deviceNum},
+		dataType : 'json',
+		success : function(data) {
+			if (data != null) {
+				//此处需要重新设置坐标x轴的最左边和最右边以及步长
+				//console.log(formatData(returnData));
+				//console.log(returnData);
+				var spDataMap = data;
+				//console.log(spDataMap);
+				
+				for (var key in spDataMap){
+					var frequency = new Array();
+					frequency = key.split("-");
+					
+					switch (key) {
+					case key0:
+						if(spDataMap[key] != null)
+							chart0.get("realTime").setData(formatData(spDataMap[key], frequency[0], frequency[1]),true);
+						break;
+					case key1:
+						if(spDataMap[key] != null)
+							chart1.get("realTime").setData(formatData(spDataMap[key], frequency[0], frequency[1]),true);
+						break;
+					case key2:
+						if(spDataMap[key] != null)
+							chart2.get("realTime").setData(formatData(spDataMap[key], frequency[0], frequency[1]),true);
+						break;
+					}
+					
+				}
+			}
+			//console.log("return null");
+		}
+	})
+}
+
+/**
+ * 停止监测
+ */
+function stopMonitor() {
+	if (moniterTimer != null) {
+		clearInterval(moniterTimer);
+		$.ajax({
+			url : "/Tsme/data/stopRecord",
+			type : "POST",
+			data : $("#deviceParaForm").serialize(),
+			dataType : 'json',
+			success : function(data) {
+				if(data != null){
+					if(data.result == true){
+						layer.msg('已停止', {icon: 1});
+						if(data.writable == true){
+							layer.msg('请稍候...', {icon: 1});
+							btnChangeEnd();
+						} else
+							btnInit();	
+					} else {
+						layer.msg('无法停止', {icon: 1});
+					}
+				}
+			}
+		})
+		
+		moniterTimer = null;
+	}
+}
+
+
+/**
+ * 生成预警模板
+ */
+function trainTemplate(){
+	layer.msg('预警模板训练中，请稍候····', {icon: 1});	
+	btnCreatingAvg();
+	var templateId = $("#warningTemplateSelect").val(); 	
+	$.ajax({
+		url : "/Tsme/data/createAvgData/" + templateId,
+		type : "POST",
+		dataType : 'json',
+		success : function(data) {
+			if(data != '0'){
+				layer.confirm("训练结束，共对" + data + "组数据进行了训练，点击“确定”显示训练结果！", 
+					function(){echo(templateId);});
+			}
+			else
+				layer.msg("检测数据读取失败", {icon: 0});
+		}
+	});
+}
+
+function echo(templateId){
+	layer.msg('数据装载中，请稍候...', {icon: 1});
+	$.ajax({
+		url : "/Tsme/data/getAvgDataList/"+templateId+"/9",
+		type : "get",
+		dataType : 'json',
+		success : function(data) {
+			if(data != null){
+				var avgMap = data;
+				//console.log(avgMap);
+				for (var key in avgMap){
+					switch (key) {
+					case key0:
+						avgArray = avgMap[key];
+						for(var i = 1 ; i <= avgArray.length; i ++){
+							//console.log(avgArray[i-1]);
+							if(avgArray[i-1].length > 0){
+								chart0.addSeries({                       
+								    id: "a"+i,
+								    name: "第 "+i+" 级特征线",
+								    type: 'line',
+								    visible: true,
+								    data: avgArray[i-1]
+									},true);
+							}
+						}
+						chart0.get("realTime").remove();
+						break;
+					case key1:
+						avgArray = avgMap[key];
+						for(var i = 1 ; i <= avgArray.length; i ++){
+							//console.log(avgArray[i-1]);
+							if(avgArray[i-1].length > 0){
+								chart1.addSeries({                       
+								    id: "a"+i,
+								    name: "第 "+i+" 级特征线",
+								    type: 'line',
+								    visible: true,
+								    data: avgArray[i-1]
+									},true);
+							}
+						}
+						chart1.get("realTime").remove();
+						break;
+					case key2:
+						avgArray = avgMap[key];
+						for(var i = 1 ; i <= avgArray.length; i ++){
+							//console.log(avgArray[i-1]);
+							if(avgArray[i-1].length > 0){
+								chart2.addSeries({                      
+								    id: "a"+i,
+								    name: "第 "+i+" 级特征线",
+								    type: 'line',
+								    visible: true,
+								    data: avgArray[i-1]
+									},true);
+							}
+						}
+						chart2.get("realTime").remove();
+						break;
+					}
+				}
+				btnAfterAvg();
+			}
+		}
+	});
+}
+
+/**
+ * 删除模板
+ */
+function deleteTemplate(){
+	var templateId = $("#warningTemplateSelect").val(); 
+	var templateName = $("#warningTemplateSelect").find("option:selected").text(); 
+	layer.confirm("您确定要删除模板“"+templateName+"”吗？",function(){
+		$.ajax({
+			url : "/Tsme/data/deleteWarningTemplate/"+templateId,
+			type : "POST",
+			dataType : 'json',
+			success : function(data) {
+				if(data=='1'){
+					layer.msg('删除成功', {icon: 1});
+					warningTemplateArray[templateId] = null;//清空
+					$("#warningTemplateSelect option[value="+templateId+"]").remove(); 
+					//console.log(warningTemplateArray);
+					if(chart0 != null) {
+						chart0.destroy();
+						$("#chart0").append("<span style='display:block; width:100%; text-align:center; line-height:540px; color:red; font-size:20px'>点击“开始采集”启动训练，选择“历史预警模板”查看模板记录。</span>"); 
+					}
+					if(chart1 != null) chart1.destroy();
+					if(chart2 != null) chart2.destroy();
+					
+				}
+				else
+					layer.msg('删除失败', {icon: 0});
+			}
+		});
+	});
+	
+	btnInit();
+	
+}
+
+
+/**
+ * 生成预警曲线
+ */
+function createWarningLine(){
+	layer.msg('计算预警曲线...', {icon: 1});
+	var baseLine = $("input:radio[name=baseline]:checked").val();
+	var peakLine = $("input:radio[name=peakline]:checked").val();
+	var templateId = $("#warningTemplateSelect").val(); 
+	$.ajax({
+		url : "/Tsme/data/createWarningLine/"+templateId+"/"+baseLine+"/"+peakLine+"",
+		type : "POST",
+		dataType : 'json',
+		success : function(data) {
+			if(data != null){
+				layer.msg('预警曲线成功生成！', {icon: 1});
+				var warnLineMap = data;
+				//console.log(warnLineMap);
+				for (var key in warnLineMap){
+					switch (key) {
+					case key0:
+						if(chart0.get("w") != null)
+							chart0.get("w").remove();
+						for(var i = 1 ; i <= chart0.series.length; i ++){
+							if(chart0.get("a" + i) != null){
+								if(baseLine != i && peakLine != i)
+									chart0.get("a" + i).setVisible(false);
+								else
+									chart0.get("a" + i).setVisible(true);
+							}
+						}
+						chart0.addSeries({                       
+						    id:"w",
+						    name:"预警线",
+						    type: 'line',
+						    visible: true,
+						    data: warnLineMap[key]
+							},true);
+						break;
+					case key1:
+						if(chart1.get("w") != null)
+							chart1.get("w").remove();
+						for(var i = 1 ; i <= chart1.series.length; i ++){
+							if(chart1.get("a" + i) != null){
+								if(baseLine != i && peakLine != i)
+									chart1.get("a" + i).setVisible(false);
+								else
+									chart1.get("a" + i).setVisible(true);
+							}
+						}
+						chart1.addSeries({                       
+						    id:"w",
+						    name:"预警线",
+						    type: 'line',
+						    visible: true,
+						    data: warnLineMap[key]
+							},true);
+						break;
+					case key2:
+						if(chart2.get("w") != null)
+							chart2.get("w").remove();
+						for(var i = 1 ; i <= chart2.series.length; i ++){
+							if(chart2.get("a" + i) != null){
+								if(baseLine != i && peakLine != i)
+									chart2.get("a" + i).setVisible(false);
+								else
+									chart2.get("a" + i).setVisible(true);
+							}
+						}
+						chart2.addSeries({                       
+						    id:"w",
+						    name:"预警线",
+						    type: 'line',
+						    visible: true,
+						    data: warnLineMap[key]
+							},true);
+						break;
+					}
+				}
+			}
+		},
+		error: function(msg){
+			layer.msg('预警曲线生成失败！', {icon: 2});
+		}
+	});
+}
+
+/**
+ * 开始监测
+ */
+var message="";
+function presubmit(){
+	if( $("#submitdata #template").val()==""){
+		message += "请填写template_name,";
+	}
+	
+	if($("#submitdata #startFrequency0").val()==""){
+		message += "填写第一组开始频率；";
+	}
+	if($("#submitdata #stopFrequency0").val()==""){
+		message += "填写第一组终止频率；";
+	}
+	
+	if($("#submitdata #startFrequency1").val()==""){
+		$("#submitdata #startFrequency1").val(0);
+	}
+	if($("#submitdata #stopFrequency1").val()==""){
+		$("#submitdata #stopFrequency1").val(0);
+	}
+	
+	if($("#submitdata #startFrequency2").val()==""){
+		$("#submitdata #startFrequency2").val(0);
+	}
+	if($("#submitdata #stopFrequency2").val()==""){
+		$("#submitdata #stopFrequency2").val(0);
+	}
+
+	if(message==""){
+		$('#editmodel').modal('hide');
+		startMonitor();
+	}else{
+		layer.alert(message);
+	}
+	message="";
+}
+
+//修改预警曲线
+var altermessage="";
+function alterPresubmit(){
+	
+	if($("#modifyForm #startFrequency").val()==""){
+		altermessage += "请填写开始频率,";
+	}
+	if($("#modifyForm #stopFrequency").val()==""){
+		altermessage += "请填写停止频率,";
+	}
+	if($("#modifyForm #threshold").val()==""){
+		altermessage += "请填阈值";
+	}
+
+	if(altermessage==""){
+		//执行的函数
+		$('#modifyLine').modal('hide');
+	}else{
+		layer.alert(altermessage);
+	}
+	
+	altermessage="";
+	
+	var baseLine = $("input:radio[name=baseline]:checked").val();
+	var peakLine = $("input:radio[name=peakline]:checked").val();
+	var templateId = $("#warningTemplateSelect").val();
+	var key = $("input:radio[name=groupNum]:checked").val();
+	
+	$.ajax({
+		url : "/Tsme/data/modifyWarningLine/" + templateId,
+		type : "POST",
+		async : true,
+		data : $("#modifyForm").serialize(),
+		dataType : 'json',
+		success : function(data) {
+			warningLine = data;
+			//console.log(warningLine);
+			
+			if(warningLine.length > 0){
+				layer.msg('预警曲线修改成功', {icon: 1});
+				switch(key){
+				case key0 :
+					if(chart0.get("w") != null)
+						chart0.get("w").remove()
+					
+					for(var i = 1 ; i <= chart0.series.length; i ++){
+						if(chart0.get("a" + i) != null){
+							if(baseLine != i && peakLine != i)
+								chart0.get("a" + i).setVisible(false);
+							else
+								chart0.get("a" + i).setVisible(true);
+						}
+					}	
+					
+					chart0.addSeries({                       
+					    id:"w",
+					    name:"预警线",
+					    type: 'line',
+					    visible: true,
+					    data:warningLine
+						},true);
+					
+					break;
+				case key1:
+					if(chart1.get("w") != null)
+						chart1.get("w").remove()
+					
+					for(var i = 1 ; i <= chart1.series.length; i ++){
+						if(chart1.get("a" + i) != null){
+							if(baseLine != i && peakLine != i)
+								chart1.get("a" + i).setVisible(false);
+							else
+								chart1.get("a" + i).setVisible(true);
+						}
+					}	
+					
+					chart1.addSeries({                       
+					    id:"w",
+					    name:"预警线",
+					    type: 'line',
+					    visible: true,
+					    data:warningLine
+						},true);
+					
+					break;
+				case key2:
+					if(chart2.get("w") != null)
+						chart2.get("w").remove()
+					
+					for(var i = 1 ; i <= chart2.series.length; i ++){
+						if(chart2.get("a" + i) != null){
+							if(baseLine != i && peakLine != i)
+								chart2.get("a" + i).setVisible(false);
+							else
+								chart2.get("a" + i).setVisible(true);
+						}
+					}	
+					
+					chart2.addSeries({                       
+					    id:"w",
+					    name:"预警线",
+					    type: 'line',
+					    visible: true,
+					    data:warningLine
+						},true);
+					break;
+				}
+				//chart.redraw();
+			}
+		}
+	})
+}
+
+function formatData(arrObj, startFrequency, stopFrequency){
+	var data = [];
+	if(arrObj != null) {
+		var len = arrObj.length;
+		var start = parseFloat(startFrequency);
+		var stop = parseFloat(stopFrequency);
+		var step = parseFloat(Number((stop-start)/len).toFixed(4));
+		
+		for (i = 0; i <len; i++) { 
+			data[i]=[start,arrObj[i]];
+			start += step; 
+		} 
+	}
+	
+	return data;
+}
+
+function operatorRemove(){
+	$("#bottomDiv").remove();
+	$("#topDiv").remove();
+}
+
+/**
+ * 初始操作状态
+ */
+function btnInit(){
+	$("#btnBegin").removeAttr("disabled");
+	$("#btnEnd").attr("disabled","true");
+	$("#btnCreateAvg").attr("disabled","true");
+	$("#warningTemplateSelect").removeAttr("disabled");
+	$("#btnDel").removeAttr("disabled");
+	$("#btnView").removeAttr("disabled");
+	$(":radio").attr("disabled","true");
+	$("#btnCreateLine").attr("disabled","true");
+	$("#btnModifyLine").attr("disabled","true");
+	$("#btnViewPeak").attr("disabled","true");
+}
+
+/**
+ * 点击查看后的操作状态
+ */
+function btnView(){
+	$("#btnBegin").removeAttr("disabled");
+	$("#btnEnd").attr("disabled","true");
+	$("#btnCreateAvg").removeAttr("disabled");//.attr("disabled","true");
+	$("#warningTemplateSelect").removeAttr("disabled");
+	$("#btnDel").removeAttr("disabled");
+	$("#btnView").removeAttr("disabled");
+	$(":radio").removeAttr("disabled");
+	$("#btnCreateLine").removeAttr("disabled");
+	$("#btnModifyLine").removeAttr("disabled");
+	$("#btnViewPeak").removeAttr("disabled");
+}
+
+/**
+ * 点击开始监控后各个按钮的变化
+ */
+function btnChangeBegin(){
+	$("#btnBegin").attr("disabled","true");
+	$("#btnEnd").removeAttr("disabled");
+	$("#btnCreateAvg").attr("disabled","true");
+	$("#warningTemplateSelect").attr("disabled","true");
+	$("#btnDel").attr("disabled","true");
+	$("#btnView").attr("disabled","true");
+	$(":radio").attr("disabled","true");
+	$("#btnCreateLine").attr("disabled","true");
+	$("#btnModifyLine").attr("disabled","true");
+	$("#btnViewPeak").attr("disabled","true");
+}
+
+/**
+ * 点击停止监控后各个按钮的变化
+ */
+function btnChangeEnd(){
+	$("#btnBegin").attr("disabled","true");
+	$("#btnEnd").attr("disabled","true");
+	$("#btnCreateAvg").removeAttr("disabled");
+	$("#warningTemplateSelect").attr("disabled","true");
+	$("#btnDel").removeAttr("disabled");
+	$("#btnView").attr("disabled","true");
+	$(":radio").attr("disabled","true");
+	$("#btnCreateLine").attr("disabled","true");
+	$("#btnModifyLine").attr("disabled","true");
+	$("#btnViewPeak").attr("disabled","true");
+}
+
+
+/**
+ * 点击生成均线后各个按钮的变化
+ */
+function btnCreatingAvg(){
+	$("#btnBegin").attr("disabled","true");
+	$("#btnEnd").attr("disabled","true");
+	$("#btnCreateAvg").attr("disabled","true");
+	$("#warningTemplateSelect").attr("disabled","true");
+	$("#btnDel").attr("disabled","true");
+	$("#btnView").attr("disabled","true");
+	$(":radio").attr("disabled","true");
+	$("#btnCreateLine").attr("disabled","true");
+	$("#btnModifyLine").attr("disabled","true");
+	$("#btnViewPeak").attr("disabled","true");
+}
+
+function btnAfterAvg(){
+	$("#btnBegin").attr("disabled","true");
+	$("#btnEnd").attr("disabled","true");
+	$("#btnCreateAvg").attr("disabled","true");
+	$("#warningTemplateSelect").attr("disabled","true");
+	$("#btnDel").removeAttr("disabled");
+	$("#btnView").attr("disabled","true");
+	$(":radio").removeAttr("disabled");
+	$("#btnCreateLine").removeAttr("disabled");
+	$("#btnModifyLine").removeAttr("disabled");
+	$("#btnViewPeak").removeAttr("disabled");
+}
+
+function viewPeak(){
+	layer.msg('查找曲线峰值', {icon: 1});
+	var rowNum = $("input:text[name=rowNumForPeak]").val();
+	var templateId = $("#warningTemplateSelect").val();
+	if(rowNum > 0){
+		$.ajax({
+			url : "/Tsme/data/getAvgExtreme/" + templateId + "/" + rowNum,
+			type : "get",
+			dataType : 'json',
+			success : function(data) {
+				if(data != null){
+					layer.msg('成果获取曲线峰值', {icon: 1});
+					var avgExtremeMap = data;
+					//console.log(warnLineMap);
+					for (var key in avgExtremeMap){
+						switch (key) {
+						case key0:
+							if(chart0.get("p") != null)
+								chart0.get("p").remove();
+							for(var i = 1 ; i <= chart0.series.length; i ++){
+								if(chart0.get("a" + i) != null){
+									if(rowNum != i)
+										chart0.get("a" + i).setVisible(false);
+									else
+										chart0.get("a" + i).setVisible(true);
+								}
+							}	
+							if(chart0.get("w") != null)
+								chart0.get("w").setVisible(false);
+							
+							chart0.addSeries({                       
+							    id:"p",
+							    name:"第 " + rowNum + " 级特征峰值",
+							    color: 'rgba(119, 152, 191, .5)', 
+							    type: 'scatter',
+							    visible: true,
+							    data: avgExtremeMap[key]
+								},true);
+							break;
+						case key1:
+							if(chart1.get("p") != null)
+								chart1.get("p").remove();
+							for(var i = 1 ; i <= chart1.series.length; i ++){
+								if(chart1.get("a" + i) != null){
+									if(rowNum != i)
+										chart1.get("a" + i).setVisible(false);
+									else
+										chart1.get("a" + i).setVisible(true);
+								}
+							}	
+							if(chart1.get("w") != null)
+								chart1.get("w").setVisible(false);
+							
+							chart1.addSeries({                       
+							    id:"p",
+							    name:"第 " + rowNum + " 级特征峰值",
+							    color: 'rgba(119, 152, 191, .5)', 
+							    type: 'scatter',
+							    visible: true,
+							    data: avgExtremeMap[key]
+								},true);
+							break;
+						case key2:
+							if(chart2.get("p") != null)
+								chart2.get("p").remove();
+							for(var i = 1 ; i <= chart2.series.length; i ++){
+								if(chart2.get("a" + i) != null){
+									if(rowNum != i)
+										chart2.get("a" + i).setVisible(false);
+									else
+										chart2.get("a" + i).setVisible(true);
+								}
+							}	
+							if(chart2.get("w") != null)
+								chart2.get("w").setVisible(false);
+							
+							chart2.addSeries({                       
+							    id:"p",
+							    name:"第 " + rowNum + " 级特征峰值",
+							    color: 'rgba(119, 152, 191, .5)', 
+							    type: 'scatter',
+							    visible: true,
+							    data: avgExtremeMap[key]
+								},true);
+							break;
+						}
+					}
+				} else {
+					layer.msg('无曲线峰值', {icon: 1});
+				}
+			},
+			error: function(msg){
+				layer.msg('生成预警曲线失败', {icon: 2});
+			}
+		})
+	}
+	else
+		layer.msg('请填写编号', {icon: 1});
+}

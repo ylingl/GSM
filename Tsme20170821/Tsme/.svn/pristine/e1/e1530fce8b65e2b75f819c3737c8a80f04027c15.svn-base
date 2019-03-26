@@ -1,0 +1,17 @@
+package tsme.table.supervisor.DAO;
+
+import org.springframework.stereotype.Repository;
+
+import security.MyUserDetails.MyUserDetails;
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPracticeImpl;
+import tsme.table.supervisor.bean.SUPERVISOR;
+
+@Repository("supervisorDAO")
+public class SupervisorDAOImpl extends TsmeMainDAOPracticeImpl<SUPERVISOR> implements SupervisorDAO{
+
+	public MyUserDetails findAccountByUsername(String name){
+		String sql = "SELECT * FROM supervisor WHERE name='" + name + "'";
+		
+		return (MyUserDetails) findByQuery(sql, MyUserDetails.class).get(0);
+	}
+}

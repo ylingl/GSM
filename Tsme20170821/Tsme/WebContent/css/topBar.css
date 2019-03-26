@@ -1,0 +1,395 @@
+@CHARSET "UTF-8";
+ul, li{list-style:none; margin:0px;padding:0px;}
+input{padding:2px;font-size:12px;resize:none;outline:none;}
+.publicSelect{position:relative; width:62px; height:22px; float:left;}
+.publicSelect .publicSelectCon{float:left; cursor:pointer; font-size:12px;color:#888; text-align:center; width:62px; height:32px; line-height:32px; overflow:hidden;}
+.publicSelect .publicSelectList{display:none; position:absolute; left:-1px; z-index:10; background:#fff;width:62px; border:1px solid #E5E5E5; top:20px; z-index:80;}
+.publicSelect .publicSelectList a{display:block; text-decoration:none; padding-left:0; text-align:center; color:#888; font-size:12px;}
+.publicSelect .publicSelectList a:hover{ color:#fff; background:#06a2cc; text-decoration:none;}
+
+.top_bar_wrap {
+	min-width: 640px;
+	width:100%;
+	height: 43px;
+	border-bottom:1px solid #e8edef;
+}
+
+.top_bar {
+	width: 1100px;
+}
+
+.rightIcon{
+	width:40px;
+	height:30px;
+	margin-top:9px;
+	float:left;
+	display:none;
+}
+
+.logout{
+	display:none;
+	line-height:16px;
+	text-align:center;
+	width:36px;
+	border:1px solid #c6cacc;
+	position:absolute;
+	top:40px;
+	left:3px;
+	color:#575959;
+	font-family:Microsoft YaHei;
+	font-size:14px;
+	text-decoration:none;
+	background-color: #fff;
+	opacity:1;
+	z-index:1000;
+}
+
+.logout:hover{
+	color:#04c4fb;
+	text-decoration:none;
+	cursor:pointer;
+}
+
+.triggle{
+	display:none;
+	width:13px;
+    height:8px;
+    position:absolute;
+	top:34px;
+	left:14px;
+	background:url("/Tsme/images/icons/icon.png") -289px -623px;
+}
+
+.top_bar_left_index {
+    float: left;
+    height: 26px;
+    margin: 9px 0 0;
+    width: 68px;
+}
+
+.top_bar_left_index.on, .top_bar_left_index.hv {
+	cursor: pointer;
+}
+
+.top_bar_left {
+	float: left;
+}
+
+.top_bar_right {
+	float: right;
+	width:500px;
+	position:relative;
+}
+
+.downBar {
+	width: 1100px;
+	height: 28px;
+}
+
+.Category {
+	height: 30px;
+	margin-top: -2px;
+	background: #4bc8e9;
+	display: none;
+	border: 1px solid #4bc8e9;
+}
+
+.Category .CategoryItem {
+	font-family: 宋体;
+	font-size: 14px;
+	color: #ffffff;
+	width: 40px;
+	line-height: 26px;
+	text-align: center;
+}
+
+.Category .CategoryItem:hover {
+	color: #888888
+}
+
+.iconCategoryBar {
+	height: 28px;
+	padding-top: 9px;
+	float: left;
+	margin-left:168px;
+	display:inline;
+}
+
+.iconCategoryBar a {
+	top: 10px;
+	width: 31px;
+	height: 34px;
+	float: left;
+	padding: 0;
+	display: inline;
+}
+
+.iconCategoryBar a.a1 {
+	background: url(/Tsme/images/icons/icon.png) -132px -32px no-repeat;
+}
+
+.iconCategoryBar a.a2 {
+	background:  url(/Tsme/images/icons/icon.png) -226px -29px no-repeat;
+}
+
+.iconCategoryBar a.a3 {
+	background: url(/Tsme/images/icons/icon.png) -325px -30px no-repeat;
+}
+.iconCategoryBar a.on.a1, .iconCategoryBar a.hv.a1 {
+	background: url(/Tsme/images/icons/icon.png) -132px -120px no-repeat;
+}
+
+.iconCategoryBar a.on.a2, .iconCategoryBar a.hv.a2 {
+	background:  url(/Tsme/images/icons/icon.png) -226px -120px no-repeat;
+}
+
+.iconCategoryBar a.on.a3, .iconCategoryBar a.hv.a3 {
+	background: url(/Tsme/images/icons/icon.png) -325px -120px no-repeat;
+}
+
+
+.iconCategoryBar a.clickBook{
+	background: url(/Tsme/images/icons/icon.png) -132px -120px no-repeat;
+}
+.iconCategoryBar a.clickRadio{
+	background:  url(/Tsme/images/icons/icon.png) -226px -120px no-repeat;
+}
+.iconCategoryBar a.clickVideo{
+	background:  url(/Tsme/images/icons/icon.png)  -325px -120px no-repeat;
+}
+.searchBoxWrap {
+	width: 300px;
+	float: right;
+}
+.searchBox {
+	padding-bottom:1px;
+	height: 32px;
+	width: 298px;
+	float: left;
+	margin-top:12px;
+	background-color:#fff;
+	border:1px solid #d8e0e3;
+}
+
+.searchBox .searchaction {
+	cursor: pointer;
+	width: 18px;
+	height: 29px;
+	float: left;
+	background: url(/Tsme/images/icons/icon.png) -522px -28px no-repeat;
+	
+}
+
+.searchBox .searchaction:hover {
+	background: url(/Tsme/images/icons/icon.png) -521px -116px no-repeat;
+}
+
+.searchinput {
+	line-height: 32px;
+	font-size:12px;
+	border:none;
+	width: 270px;
+	float: left;
+	margin-left:4px;
+	color:#999;
+	padding:0px;
+	height:32px;
+	outline: none;
+}
+
+#divAccount {
+	margin-left:5px;
+	width:30px;
+	height:25px;
+	background: url("/Tsme/images/icons/icon.png") no-repeat scroll -801px -31px;
+	float:left;
+}
+
+.divInfo{
+	padding-top:5px;
+	width:150px;
+	height:60px;
+	float:left;
+	color:#0080c0;
+	font-size:12px;
+	font-family:Microsoft YaHei;
+}
+
+#divAccount.on, #divAccount.hv {
+	cursor: pointer;
+	background: url("/Tsme/images/icons/icon.png") no-repeat scroll -801px -120px;
+}
+
+#divAccount.loginFlag{
+	background: url("/Tsme/images/icons/icon.png") no-repeat scroll -801px -120px;
+}
+
+.LargeCate {
+	width: 24px;
+	height: 34px;
+	float: left;
+	padding: 0 22px;
+}
+
+.LargeCate .Category {
+	position: absolute;
+	left: 50%;
+	margin-left: -550px;
+	top: 45px;
+	z-index: 100;
+	width: 1100px
+}
+
+.LargeCate .cateFilter {
+	width: 99.8%;
+	left: 0;
+	margin-left: 0;
+}
+
+.topShoppingCart {
+	/* float:left; */
+	right: 75px;
+	cursor: pointer;
+	margin-top: 10px;
+	/* position: relative; */
+	position: absolute;
+	width: 33px;
+	height: 26px;
+	background: url("/Tsme/images/icons/icon.png") no-repeat scroll -608px -30px;
+	display:none;
+}
+
+.topShoppingCart:hover {
+	background: url(/Tsme/images/icons/icon.png) -608px -120px no-repeat;
+}
+
+.topShoppingCart a {
+	width: 16px;
+	top: -4px;
+	font-family: Microsoft YaHaei;
+	background: url(/Tsme/images/icons/icon.gif) 0 0 no-repeat;
+	left: 20px;
+	position: absolute;
+	text-align: center;
+	background: #fa7252;
+	height: 16px;
+	line-height: 16px;
+	color: #fff;
+	font-weight: bold;
+	border-radius:50%;
+	text-decoration: none;
+	font-size:12px;
+}
+
+.topShoppingCart a:hover {
+	text-decoration: none;
+}
+
+.topPublicSelect {
+	width: 30px;
+	height: 14px;
+	margin-top: 5px;
+}
+
+.topPublicSelect .publicSelectList {
+	position: absolute;
+	width: 24px;
+	height: 20px;
+	line-height: 20px;
+	left: 0;
+	top: 24px;
+}
+
+.topPublicSelect .publicSelectList a {
+	display: block;
+	color: #888;
+}
+
+.topPublicSelect .publicSelectList a:hover {
+	background:
+}
+
+#sellerList{
+	background: url(/Tsme/images/icons/icon.png) -414px  -31px no-repeat;
+}
+
+#sellerList.clickSeller{
+	background: url(/Tsme/images/icons/icon.png) -415px -113px no-repeat;
+}
+#sellerList:hover{
+	background: url(/Tsme/images/icons/icon.png) -415px -113px no-repeat;
+}
+.aboutUS{
+	float:right;
+	width:48px;
+	height:17px;
+	font-size:12px;
+	position:absolute;
+	right:1%;
+	margin-top:15px;
+	font-family:"微软雅黑";	
+}
+.aboutUS a{
+	text-decoration: none;
+	color:#327BB9;
+}
+.aboutUs{
+	width:320px; 
+	height:225px; 
+	position:absolute; 
+	right:1%; 
+	top:20px; 
+	z-index:101;
+	font-size:12px;
+	background:white;
+	border:solid 1px;
+	line-height:17px;
+}
+.aboutUs p{
+	text-align:left;
+	margin-top:12px;
+}
+.loginbox{
+	float:right; 
+	color:#333; 
+	font-size:16px;
+	margin-top:10px;
+	margin-right: 5px;
+}
+.loginbox a{
+  text-decoration: none;
+   width: 50px;
+   height: 27px;
+   line-height: 27px;
+   margin: 0px 5px;
+   border: 1px solid #bdc2c2;
+   display: inline-block;
+   color: #383737;
+   font-size: 14px;
+   text-align: center;
+}
+.loginbox a.on, .loginbox a:hover{ 
+	/* background:#4fbfe8;  */
+	/* background:#fff; */
+	text-decoration: none;
+	color:#4fbfe8; 
+	border: 1px solid #4fbfe8;
+}
+
+@MEDIA screen and (min-width: 980px) and (max-width: 1100px){
+	.top_bar{  width:876px;}
+	.iconCategoryBar{margin-left:80px;}
+	.top_bar_right{width:400px;}
+	.searchBoxWrap{float: left;}
+}
+@MEDIA screen and (min-width: 876px) and (max-width: 980px){
+	.top_bar{  width:900px;}
+	.iconCategoryBar{margin-left:80px;}
+	.top_bar_right{width:400px;}
+}
+@MEDIA screen and (min-width: 680px) and (max-width: 876px){
+	.top_bar{  width:680px;}
+	.iconCategoryBar{margin-left:40px;}
+	.top_bar_right{width:300px;}
+	.searchBoxWrap{float: left;}
+}

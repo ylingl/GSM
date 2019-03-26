@@ -1,0 +1,50 @@
+package mvc.config;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import net.sf.json.JSONObject;
+import tsme.table.device.bean.DEVICE;
+import tsme.table.deviceLocation.bean.DEVICELOCATION;
+
+@Controller
+public class ConfigController {
+	
+	@RequestMapping("accountIndex")
+	public ModelAndView accountIndex(){
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("account/frame");
+		return mav;
+	}
+
+	@RequestMapping("configIndex")
+	public ModelAndView configIndex(){
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("device");
+		return mav;
+	}
+	
+	@RequestMapping("receiveDeviceInfo")
+	public void receiveDeviceInfo(String info, HttpServletRequest request, HttpServletResponse response){
+		JSONObject obj = JSONObject.fromObject(info);
+		DEVICE device = new DEVICE();
+		device.setCreate_time(System.currentTimeMillis());
+		device.setDevice_num(obj.getString("name"));
+		device.setActive(true);
+		DEVICELOCATION deviceLocation = new DEVICELOCATION();
+		deviceLocation.setDevice_id(device.getId());
+		deviceLocation.setDistance(obj.getDouble("distance"));
+		deviceLocation.setAzimuth(obj.getInt("azimuth"));
+	}
+	
+	@RequestMapping("adminHomepage")
+	public ModelAndView adminHomePage(){
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("frame");
+		return mav;
+	}
+}

@@ -1,0 +1,15 @@
+package logic.map;
+
+import java.util.List;
+
+import tsme.table.baseStation.bean.BASESTATION;
+import mvc.map.GeoMsg;
+
+public interface MapService {
+
+	public List<GeoMsg> getBSGeoMsg();
+	
+	public BASESTATION getBSInfoWithPosition(float lng, float lat);
+	
+	public List<GeoMsg> getDeviceGeoMsg();
+}

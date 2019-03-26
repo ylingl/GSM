@@ -1,0 +1,98 @@
+package logic.map;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import mvc.map.GeoMsg;
+import tsme.table.baseStation.DAO.BaseStationDAO;
+import tsme.table.baseStation.bean.BASESTATION;
+import tsme.table.bsLocation.bean.BSLOCATION;
+import tsme.table.device.DAO.DeviceDAO;
+import tsme.table.device.bean.DEVICE;
+import tsme.table.deviceLocation.DAO.DeviceLocationDAO;
+import tsme.table.deviceLocation.bean.DEVICELOCATION;
+
+@Service("mapService")
+public class MapServiceImpl implements MapService {
+
+	@Autowired
+	@Qualifier("baseStationDAO")
+	BaseStationDAO baseStationDAO;
+
+	@Autowired
+	@Qualifier("deviceDAO")
+	DeviceDAO deviceDAO;
+	
+	@Autowired
+	@Qualifier("deviceLocationDAO")
+	DeviceLocationDAO deviceLocationDAO;
+
+	public List<GeoMsg> getBSGeoMsg() {
+
+		List<GeoMsg> geoMsgs = new ArrayList<GeoMsg>();
+
+		List<BASESTATION> basestations = baseStationDAO.findAllActivated(BASESTATION.class, "DESC");
+		
+		String sql = "";
+		for (BASESTATION temp : basestations) {
+			sql = "SELECT * FROM bsLocation WHERE baseStation_id='" + temp.getId() + "' AND active=1";
+			
+			BSLOCATION bsLocation = (BSLOCATION) deviceLocationDAO.findByQuery(sql, BSLOCATION.class).get(0);
+			
+			GeoMsg geoMsg = new GeoMsg();
+			geoMsg.setDevice_num(temp.getBSIC());
+			geoMsg.setLAT(bsLocation.getLAT());
+			geoMsg.setLNG(bsLocation.getLNG());
+			geoMsg.setKm_stone(bsLocation.getKm_stone());
+			geoMsg.setDevice_type(temp.getModel());
+			geoMsg.setIntroduction(temp.getIntroduction());
+			geoMsg.setPoint_type("BS");
+			
+			geoMsgs.add(geoMsg);
+		}
+
+		return geoMsgs;
+	}
+
+	public BASESTATION getBSInfoWithPosition(float lng, float lat) {
+		
+		BASESTATION BS = baseStationDAO.findBSByPosition(lng, lat);
+		
+		return BS;
+		
+	}
+
+	public List<GeoMsg> getDeviceGeoMsg() {
+
+		List<GeoMsg> geoMsgs = new ArrayList<GeoMsg>();
+
+		List<DEVICE> devices = deviceDAO.findAllActivated(DEVICE.class, "DESC");
+		
+		String sql = "";
+		for (DEVICE temp : devices) {
+			
+			sql = "SELECT * FROM deviceLocation WHERE device_id='" + temp.getId() + "' AND active=1";
+			
+			DEVICELOCATION deviceLocation = (DEVICELOCATION) deviceLocationDAO.findByQuery(sql, DEVICELOCATION.class).get(0);
+			
+			GeoMsg geoMsg = new GeoMsg();
+			
+			geoMsg.setDevice_num(temp.getDevice_num());
+			geoMsg.setDevice_type(temp.getDevice_type());
+			geoMsg.setIntroduction("TSME2000");
+			geoMsg.setLAT(deviceLocation.getLAT());
+			geoMsg.setLNG(deviceLocation.getLNG());
+			geoMsg.setPoint_type("DS");
+
+			geoMsgs.add(geoMsg);
+		}
+		
+		return geoMsgs;
+		
+	}
+	
+}

@@ -1,0 +1,31 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>配置设备</title>
+</head>
+<body>
+这是配置设备页面<br/>
+<a href="/Tsme">跳转到首页</a><br/>
+<div>
+<ul>
+	<li>
+		<h>设备详细信息</h>
+	</li>
+	<li><span>设备编号</span><span></span></li>
+</ul>
+
+</div>
+<h>设备编号</h>
+<a>基站编码：</a>
+<a>设备地址：</a>
+<a>参数配置</a>
+<span>频率：</span>
+<span>频点：</span>
+<span>载干比：</span>
+<span>电平值：</span>
+<span>广播控制信号到：BCCH</span>
+<span>载频数：TRX</span>
+</body>
+</html>

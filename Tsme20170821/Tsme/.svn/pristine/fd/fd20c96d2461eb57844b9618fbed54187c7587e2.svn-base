@@ -1,0 +1,787 @@
+package logic.data;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import Jama.Matrix;
+import logic.data.bean.BeanAvg;
+import logic.data.bean.BeanExtreme;
+import mvc.data.WarningTemplateRecPara;
+import tsme.table.avgData.DAO.AvgDataDAO;
+import tsme.table.avgData.bean.AVGDATA;
+import tsme.table.avgExtreme.DAO.AvgExtremeDAO;
+import tsme.table.avgExtreme.bean.AVGEXTREME;
+import tsme.table.device.DAO.DeviceDAO;
+import tsme.table.device.bean.DEVICE;
+import tsme.table.frequencyBand.DAO.FrequencyBandDAO;
+import tsme.table.frequencyBand.bean.FREQUENCYBAND;
+import tsme.table.originalData.DAO.OriginalDataDAO;
+import tsme.table.originalData.bean.ORIGINALDATA;
+import tsme.table.trainingData.DAO.TrainingDataDAO;
+import tsme.table.trainingData.bean.TRAININGDATA;
+import tsme.table.warningLine.DAO.WarningLineDAO;
+import tsme.table.warningTemplate.DAO.WarningTemplateDAO;
+import tsme.table.warningTemplate.bean.WARNINGTEMPLATE;
+import utils.DataPoolTools;
+import utils.file.ReadFromFile;
+
+@Service("dataAnalysisService")
+public class DataAnalysisImpl implements DataAnalysis {
+	public static String dataPath = "D:\\workspace\\space-mvc\\Tsme\\WebContent\\data\\160118085159.js";
+	public static String dataPathOut = "D:\\workspace\\space-mvc\\Tsme\\WebContent\\data\\160118085159_out.js";
+
+	@Autowired
+	@Qualifier("warningTemplateDAO")
+	private WarningTemplateDAO warningTemplateDAO;
+	
+	@Autowired
+	@Qualifier("frequencyBandDAO")
+	private FrequencyBandDAO frequencyBandDAO;
+	
+	@Autowired
+	@Qualifier("originalDataDAO")
+	private OriginalDataDAO originalDataDAO;
+	
+	@Autowired
+	@Qualifier("trainingDataDAO")
+	private TrainingDataDAO trainingDataDAO;
+
+	@Autowired
+	@Qualifier("avgDataDAO")
+	private AvgDataDAO avgDataDAO;
+
+	@Autowired
+	@Qualifier("warningLineDAO")
+	private WarningLineDAO warningLineDAO;
+	
+	@Autowired
+	@Qualifier("avgExtremeDAO")
+	private AvgExtremeDAO avgExtremeDAO;
+	
+	@Autowired
+	@Qualifier("deviceDAO")
+	private DeviceDAO deviceDAO;
+
+	public static void main(String[] args) {
+		ReadFromFile.readFileByLinesAndWrite(dataPath,dataPathOut);
+	}
+	
+	public WARNINGTEMPLATE createWarningTemplate(WarningTemplateRecPara warningTemplateRecPara, HttpSession httpSession) {
+		
+		String sql = "SELECT id FROM device WHERE device_num='" + httpSession.getAttribute("currentDeviceNum") + "'";
+		String deviceId = (String) deviceDAO.findByQueryForList(sql, String.class).get(0);
+		
+		WARNINGTEMPLATE warningTemplate = new WARNINGTEMPLATE();
+		
+		warningTemplate.setDevice_id(deviceId);
+		warningTemplate.setTemplate_name(warningTemplateRecPara.getTemplate_name());
+		warningTemplate.setFftSize(warningTemplateRecPara.getFftSize());
+		warningTemplate.setLAT(DataPoolTools.monitorReportStatusMap.get(httpSession.getAttribute("currentDeviceNum")).getLatitude());
+		warningTemplate.setLNG(DataPoolTools.monitorReportStatusMap.get(httpSession.getAttribute("currentDeviceNum")).getLongitude());
+		warningTemplate.setMaxMeans(warningTemplateRecPara.getMaxMeans());
+		warningTemplate.setBandWidth(warningTemplateRecPara.getBandWidth());
+		warningTemplate.setActive(true);
+		warningTemplate.setCreate_time(System.currentTimeMillis());
+		
+		warningTemplateDAO.save(warningTemplate);
+		
+		List<FREQUENCYBAND> frequencyBandList = new ArrayList<FREQUENCYBAND>();
+		
+		if(warningTemplateRecPara.getStopFrequency0() > 0) {
+			FREQUENCYBAND frequencyBand = new FREQUENCYBAND();
+			
+			frequencyBand.setWarningTemplate_id(warningTemplate.getId());
+			frequencyBand.setStartFrequency(warningTemplateRecPara.getStartFrequency0());
+			frequencyBand.setStopFrequency(warningTemplateRecPara.getStopFrequency0());
+			frequencyBand.setActive(true);
+			frequencyBand.setCreate_time(System.currentTimeMillis());
+			
+			frequencyBandList.add(frequencyBand);
+		}
+		
+		if(warningTemplateRecPara.getStopFrequency1() > 0) {
+			FREQUENCYBAND frequencyBand = new FREQUENCYBAND();
+			
+			frequencyBand.setWarningTemplate_id(warningTemplate.getId());
+			frequencyBand.setStartFrequency(warningTemplateRecPara.getStartFrequency1());
+			frequencyBand.setStopFrequency(warningTemplateRecPara.getStopFrequency1());
+			frequencyBand.setActive(true);
+			frequencyBand.setCreate_time(System.currentTimeMillis());
+			
+			frequencyBandList.add(frequencyBand);
+		}
+		
+		if(warningTemplateRecPara.getStopFrequency2() > 0) {
+			FREQUENCYBAND frequencyBand = new FREQUENCYBAND();
+			
+			frequencyBand.setWarningTemplate_id(warningTemplate.getId());
+			frequencyBand.setStartFrequency(warningTemplateRecPara.getStartFrequency2());
+			frequencyBand.setStopFrequency(warningTemplateRecPara.getStopFrequency2());
+			frequencyBand.setActive(true);
+			frequencyBand.setCreate_time(System.currentTimeMillis());
+			
+			frequencyBandList.add(frequencyBand);
+		}
+		
+		frequencyBandDAO.batchSave(frequencyBandList);
+		
+		warningTemplate.setFrequencyBandList(frequencyBandList);
+		
+		return warningTemplate;
+	}
+	
+	@Override
+	public int saveOriginalData(ORIGINALDATA originalData){
+		return originalDataDAO.save(originalData);
+	}
+	
+	@Override
+	public int saveTrainingData(TRAININGDATA trainingData){
+		return trainingDataDAO.save(trainingData);
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean deleteWarningTemplate(String warningTemplate_id) {
+		
+		String sql = "SELECT id FROM frequencyBand WHERE warningTemplate_id='" + warningTemplate_id + "' AND active = 1 ORDER BY create_time";
+		List<String> idList = (List<String>) frequencyBandDAO.findByQueryForList(sql, String.class);
+		
+		for(String id : idList) {
+			sql = "DELETE FROM avgData WHERE frequencyBand_id='" + id + "'";
+			avgDataDAO.executeBySql(sql);
+			
+			sql = "DELETE FROM avgExtreme WHERE frequencyBand_id='" + id + "'";
+			avgExtremeDAO.executeBySql(sql);
+			
+			sql = "DELETE FROM warningLine WHERE frequencyBand_id='" + id + "'";
+			warningLineDAO.executeBySql(sql);
+			
+			sql = "DELETE FROM originalData WHERE frequencyBand_id='" + id + "'";
+			originalDataDAO.executeBySql(sql);
+			
+			sql = "DELETE FROM trainingData WHERE frequencyBand_id='" + id + "'";
+			trainingDataDAO.executeBySql(sql);
+		}	
+		
+		warningTemplateDAO.cascadedDeleteById(warningTemplate_id);
+
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public int createAvgData(String warningTemplateId) {
+		
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY create_time";		
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class);
+		
+		for(FREQUENCYBAND frequencyBand : frequencyBandList) {
+			//清空老数据
+			sql = "DELETE FROM avgData WHERE frequencyBand_id='" + frequencyBand.getId() + "'";
+			avgDataDAO.executeBySql(sql);
+			
+			sql = "SELECT file_path FROM trainingData WHERE frequencyBand_id='" + frequencyBand.getId() + "' AND active = 1 ORDER BY create_time";
+			List<String> filePathList = (List<String>) trainingDataDAO.findByQueryForList(sql, String.class);
+			
+			if(filePathList.size() == 0){
+				return -1;
+			}
+			
+			Map<String, ArrayList<Matrix>> avgMap = new HashMap<String, ArrayList<Matrix>>();
+			avgMap.put("avg1", new ArrayList<Matrix>());
+			avgMap.put("avg2", new ArrayList<Matrix>());
+			avgMap.put("avg3", new ArrayList<Matrix>());
+			avgMap.put("avg4", new ArrayList<Matrix>());
+			avgMap.put("avg5", new ArrayList<Matrix>());
+			avgMap.put("avg6", new ArrayList<Matrix>());
+			avgMap.put("avg7", new ArrayList<Matrix>());
+			avgMap.put("avg8", new ArrayList<Matrix>());
+			avgMap.put("avg9", new ArrayList<Matrix>());
+			
+			
+			for(String filePath : filePathList) {
+				File file = new File(filePath);
+				BufferedReader reader = null;
+				int rowNum = 0;
+				try {
+					reader = new BufferedReader(new FileReader(file));
+					List<String> row = new ArrayList<String>();
+					String tempString = null;
+					//读文件并计算行数
+					while ((tempString = reader.readLine()) != null ) {
+						if (tempString.startsWith("[") && tempString.endsWith("],")){
+							row.add(tempString.substring(1, tempString.length() - 2));
+							rowNum ++;
+						} else if (tempString.startsWith("[") && tempString.endsWith("]")) {
+							row.add(tempString.substring(1, tempString.length() - 1));
+							rowNum ++;
+						}
+					}
+					
+					reader.close();
+					
+					double[][] orignalData = new double[rowNum][row.get(0).split(",").length];
+					
+					int i = 0;
+					for(String temp : row) {	
+						String[] data = temp.split(",");
+						
+						for(int j = 0; j < data.length; j++){ 
+							orignalData[i][j] = Double.valueOf(data[j]);
+						}
+						
+						i ++;
+					}
+					
+					int columnNum = orignalData[0].length;
+					Matrix dataMatrix = new Matrix(orignalData);
+					
+					//WARNINGTEMPLATE warningTemplate = warningTemplateDAO.findBothById(warningTemplateId);
+					
+					Matrix avg1 = calculateAvgData(dataMatrix, new Matrix(1, columnNum), 0, rowNum, columnNum);
+					//saveAvgData(1, avg1, warningTemplate);
+					avgMap.get("avg1").add(avg1);
+					
+					Matrix avg2 = calculateAvgData(dataMatrix, avg1, 12, rowNum, columnNum);
+					//saveAvgData(2, avg2, warningTemplate);
+					avgMap.get("avg2").add(avg2);
+					
+					Matrix avg3 = calculateAvgData(dataMatrix, avg2, 12, rowNum, columnNum);
+					//saveAvgData(3, avg3, warningTemplate);
+					avgMap.get("avg3").add(avg3);
+					
+					Matrix avg4 = calculateAvgData(dataMatrix, avg3, 15, rowNum, columnNum);
+					//saveAvgData(4, avg4, warningTemplate);
+					avgMap.get("avg4").add(avg4);
+					
+					Matrix avg5 = calculateAvgData(dataMatrix, avg4, 30, rowNum, columnNum);
+					//saveAvgData(5, avg5, warningTemplate);
+					avgMap.get("avg5").add(avg5);
+					
+					Matrix avg6 = calculateAvgData(dataMatrix, avg5, 30, rowNum, columnNum);
+					//saveAvgData(6, avg6, warningTemplate);
+					avgMap.get("avg6").add(avg6);
+					
+					Matrix avg7 = calculateAvgData(dataMatrix, avg6, 30, rowNum, columnNum);
+					//saveAvgData(7, avg7, warningTemplate);
+					avgMap.get("avg7").add(avg7);
+					
+					Matrix avg8 = calculateAvgData(dataMatrix, avg7, 30, rowNum, columnNum);
+					//saveAvgData(8, avg8, warningTemplate);
+					avgMap.get("avg8").add(avg8);
+					
+					Matrix avg9 = calculateAvgData(dataMatrix, avg8, 30, rowNum, columnNum);
+					//saveAvgData(9, avg9, warningTemplate);
+					avgMap.get("avg9").add(avg9);
+
+				} catch (IOException e) {
+					
+					e.printStackTrace();
+					
+				} finally {
+					if (reader != null) {
+						try {
+							reader.close();
+						} catch (IOException e1) {
+							
+						}
+					}
+				}
+				
+			}
+			
+			for(String key : avgMap.keySet()){
+				ArrayList<Matrix> avgMatrixList = avgMap.get(key);
+				Matrix temp = new Matrix(1, avgMatrixList.get(0).getColumnDimension(), 0);
+				for(Matrix avg : avgMatrixList){
+					temp = temp.plus(avg);
+				}
+				
+				temp = temp.times(1/(double)avgMatrixList.size());
+				switch (key) {
+				
+				case "avg1" : 
+					saveAvgData(1, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg2" :
+					saveAvgData(2, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg3" : 
+					saveAvgData(3, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg4" :
+					saveAvgData(4, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg5" : 
+					saveAvgData(5, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg6" :
+					saveAvgData(6, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg7" :
+					saveAvgData(7, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg8" : 
+					saveAvgData(8, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				case "avg9" :
+					saveAvgData(9, temp, frequencyBand.getId(), frequencyBand.getStartFrequency(), frequencyBand.getStopFrequency());
+					break;
+				
+				}
+			}
+		}
+
+		return frequencyBandList.size();
+	}
+
+	private Matrix calculateAvgData(Matrix dataMatrix, Matrix avgRow, double limit, int rowNum, int columnNum) {
+		
+		if(avgRow.times(new Matrix(columnNum, 1, 1)).get(0, 0) == 0) {
+			//计算一次均值
+			Matrix A = new Matrix(1, rowNum, 1/(double)rowNum);
+			Matrix B = A.times(dataMatrix);
+			
+			return B;
+		} 
+		else {
+			int[] weight = new int[columnNum];
+			
+			Matrix tempMatrix = new Matrix(rowNum, columnNum);
+			
+			for(int j = 0; j < columnNum; j ++) {
+				int pointNum = 0;
+				
+				for(int i = 0; i < rowNum; i ++) {
+					if(dataMatrix.get(i, j) >= avgRow.get(0, j) && dataMatrix.get(i, j) < avgRow.get(0, j) + limit){
+						tempMatrix.set(i, j, dataMatrix.get(i, j));
+						pointNum ++;
+					}
+				}
+				
+				weight[j] = pointNum;
+			}
+			
+			Matrix A = new Matrix(1, rowNum, 1);
+			Matrix B = A.times(tempMatrix);
+			
+			for(int j = 0; j < columnNum; j ++) {
+				
+				if(B.get(0, j) != 0){
+					B.set(0, j, B.get(0, j)/(double)weight[j]);
+				}
+				else{
+					B.set(0, j, avgRow.get(0, j) + limit/(double)2);
+				}
+				
+			}
+			
+			return B;
+		}		
+	}
+	
+	private boolean saveAvgData(int rowNum, Matrix avgRow, String frequencyBandId, float startFrequency, float stopFrequency) {
+		
+		double avgData[][] = avgRow.getArray();
+		
+		float bandwidth = stopFrequency - startFrequency;
+		
+		float step = bandwidth / avgData[0].length;
+		
+		StringBuilder sql = new StringBuilder();
+		
+		sql.append("INSERT INTO avgData (id, frequencyBand_id, row, x, y, active, create_time) VALUES");
+		for(int j = 0; j < avgData[0].length; j ++){
+			sql.append(" ('").append(UUID.randomUUID()).append("', ");
+			sql.append("'").append(frequencyBandId).append("', ");
+			sql.append("'").append(rowNum).append("', ");
+			
+			BigDecimal a = new BigDecimal(startFrequency + j * step);
+			sql.append("'").append(a.setScale(4, BigDecimal.ROUND_HALF_UP).floatValue()).append("', ");
+			
+			BigDecimal b = new BigDecimal(avgData[0][j]);
+			sql.append("'").append(b.setScale(2, BigDecimal.ROUND_HALF_UP).floatValue()).append("', ");
+			
+			sql.append("'").append(1).append("', ");
+			sql.append("'").append(System.currentTimeMillis()).append("'),");
+		}
+		sql.deleteCharAt(sql.length()-1);
+		
+		avgDataDAO.executeBySql(sql.toString());
+		
+		return true;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public void createAvgExtreme(int rowNum, String warningTemplateId) {
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY create_time";		
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class);
+		
+		for(FREQUENCYBAND frequencyBand : frequencyBandList){
+			//删除旧数据
+			sql = "DELETE FROM avgExtreme WHERE frequencyBand_id='" + frequencyBand.getId() + "' AND row='" + rowNum + "'";
+			avgExtremeDAO.executeBySql(sql);
+			
+			sql = "SELECT x,y FROM avgData WHERE row=" + rowNum + " AND frequencyBand_id='" + frequencyBand.getId() + "' ORDER BY x";
+			List<AVGDATA> list = (List<AVGDATA>) avgDataDAO.findByQuery(sql, AVGDATA.class);
+			
+			boolean goMax = false;//是否向极大值发展
+			boolean trendMin = false;//是否有变小的趋势
+			short trendMinCount = 0;
+			float maxTemp = 0;
+			float minTemp = 0;
+			List<AVGEXTREME> maxExtremeList = new ArrayList<AVGEXTREME>();
+			
+			AVGEXTREME maxExtreme = new AVGEXTREME();
+			maxExtreme.setRow(rowNum);
+			
+			//DATAEXTREME minExtreme = new DATAEXTREME();
+			
+			//List<DATAEXTREME> minExtremes = new LinkedList<DATAEXTREME>();
+			
+			//根据前两个的点初始化数据
+			if(list.get(0).getY() <= list.get(1).getY()){
+				goMax = true;
+				maxTemp = list.get(1).getY();
+			}
+			else {
+				goMax = false;
+				minTemp = list.get(1).getY();
+			}
+			
+			for (int i=2; i < list.size()-1; i++) {
+				
+				AVGDATA object = list.get(i);
+				
+				if(goMax == true) {
+					if(object.getY() >= maxTemp){
+						maxTemp = object.getY();
+						goMax = true;
+					}
+					else {
+						goMax = false;
+						
+						trendMin = true;
+						trendMinCount ++;
+						
+						maxExtreme.setX(list.get(i-1).getX());
+						maxExtreme.setY(list.get(i-1).getY());
+						
+						minTemp = object.getY();
+					}
+				}
+				else {
+					if(object.getY() <= minTemp + 0.1){
+						minTemp = object.getY();
+						goMax = false;
+						
+						if(trendMin == true) {
+							if(trendMinCount >= 1){
+								AVGEXTREME temp = new AVGEXTREME();
+								
+								temp.setFrequencyBand_id(warningTemplateId);//wrong
+								temp.setRow(rowNum);
+								temp.setX(maxExtreme.getX());
+								temp.setY(maxExtreme.getY());
+								
+								if(!maxExtremeList.contains(temp)){
+									maxExtremeList.add(temp);
+								}
+								
+								trendMin = false;
+								trendMinCount = 0;
+							}
+							else{
+								trendMinCount ++;
+							}
+						}
+						
+					}
+					else {
+						goMax = true;
+						
+						if(trendMin == true && trendMinCount <= 1){
+							trendMin = false;
+							trendMinCount = 0;
+						}
+						
+						//minExtreme.setX(list.get(i-1).getX());
+						//minExtreme.setY(list.get(i-1).getY());
+						//minExtremes.add(minExtreme);
+						
+						maxTemp = object.getY();
+					}
+				}
+			}
+			
+			//avgExtremeDAO.batchSave(maxExtremeList);
+			saveAvgExtreme(rowNum, maxExtremeList, frequencyBand.getId());			
+		}
+	}
+	
+	private boolean saveAvgExtreme(int rowNum, List<AVGEXTREME> maxExtremeList, String frequencyBandId) {
+		
+		StringBuilder sql = new StringBuilder();
+		
+		sql.append("INSERT INTO avgExtreme (id, frequencyBand_id, row, x, y, active, create_time) VALUES");
+		for(AVGEXTREME temp : maxExtremeList){
+			sql.append(" ('").append(UUID.randomUUID()).append("', ");
+			sql.append("'").append(frequencyBandId).append("', ");
+			sql.append("'").append(rowNum).append("', ");
+			sql.append("'").append(temp.getX()).append("', ");
+			
+			BigDecimal b = new BigDecimal(temp.getY());
+			sql.append("'").append(b.setScale(2, BigDecimal.ROUND_HALF_UP).floatValue()).append("', ");
+			
+			sql.append("'").append(1).append("', ");
+			sql.append("'").append(System.currentTimeMillis()).append("'),");
+		}
+		sql.deleteCharAt(sql.length()-1);
+		
+		avgExtremeDAO.executeBySql(sql.toString());
+		
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void createWaringLine(int baseRowNum, int peakRowNum, String warningTemplateId) {
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY create_time";		
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class);
+		
+		for(FREQUENCYBAND frequencyBand : frequencyBandList){
+			//删除老数据
+			sql = "DELETE FROM warningLine WHERE frequencyBand_id='" + frequencyBand.getId() + "'";
+			warningLineDAO.executeBySql(sql);
+			
+			sql = "SELECT x,y FROM avgData WHERE row=" + baseRowNum + " AND frequencyBand_id='" + frequencyBand.getId() + "' ORDER BY x";
+			List<BeanAvg> baseRow = (List<BeanAvg>) avgDataDAO.findByQuery(sql, BeanAvg.class);
+			
+			sql = "SELECT x,y FROM avgExtreme where row=" + peakRowNum + " AND frequencyBand_id='" + frequencyBand.getId() + "' ORDER BY x";
+			List<BeanExtreme> peakRowExtreme = (List<BeanExtreme>) avgExtremeDAO.findByQuery(sql, BeanExtreme.class);
+			
+			Iterator<BeanAvg> iterator = baseRow.iterator();
+			double difference = 0;
+			for(BeanExtreme temp : peakRowExtreme){
+				while (iterator.hasNext()) {
+					
+					BeanAvg ba = (BeanAvg) iterator.next();
+					
+					if(temp.getX() == ba.getX()) {
+						difference = difference + temp.getY() - ba.getY();		
+						break;
+					}
+				}
+			}
+			
+			difference = difference/(double)peakRowExtreme.size();
+			
+			BigDecimal b = new BigDecimal(difference);
+			
+			saveWarningLine(baseRow, baseRowNum, peakRowNum, b.setScale(2, BigDecimal.ROUND_HALF_UP).floatValue(), frequencyBand.getId());
+		}
+		
+	}
+
+	private boolean saveWarningLine(List<BeanAvg> baseRow, int baseRowNum, int peakRowNum, float difference, String frequencyBandId) {
+		
+		StringBuilder sql = new StringBuilder();
+		
+		sql.append("INSERT INTO warningLine (id, frequencyBand_id, baseRow, peakRow, x, y, active, create_time) VALUES");
+		for(BeanAvg temp : baseRow){
+			sql.append(" ('").append(UUID.randomUUID()).append("', ");
+			sql.append("'").append(frequencyBandId).append("', ");
+			sql.append("'").append(baseRowNum).append("', ");
+			sql.append("'").append(peakRowNum).append("', ");
+			sql.append("'").append(temp.getX()).append("', ");
+			
+			BigDecimal b = new BigDecimal(temp.getY() + difference);
+			sql.append("'").append(b.setScale(2, BigDecimal.ROUND_HALF_UP).floatValue()).append("', ");
+			
+			sql.append("'").append(1).append("', ");
+			sql.append("'").append(System.currentTimeMillis()).append("'),");
+		}
+		sql.deleteCharAt(sql.length()-1);
+		
+		warningLineDAO.executeBySql(sql.toString());
+		
+		return true;
+		
+	}
+	
+	@SuppressWarnings({"unchecked"})
+	@Override
+	public Map<String, List<List<Float>>> getAvgExtreme(String warningTemplateId, int row) {
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY create_time";
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class);
+		
+		Map<String, List<List<Float>>> avgExtremeMap = new HashMap<String, List<List<Float>>>();
+		for(FREQUENCYBAND frequencyBand : frequencyBandList) {
+			sql = "SELECT x,y FROM avgExtreme WHERE row=" + row + " AND frequencyBand_id='" + frequencyBand.getId() + "' ORDER BY x";
+			List<BeanExtreme> pointList = (List<BeanExtreme>) avgExtremeDAO.findByQuery(sql, BeanExtreme.class);
+			
+			List<List<Float>> line = new ArrayList<List<Float>>();
+			for (Iterator<BeanExtreme> iterator = pointList.iterator(); iterator.hasNext();) {
+				List<Float> tempPoint = new ArrayList<Float>();
+				BeanExtreme be = (BeanExtreme) iterator.next();
+				
+				tempPoint.add(be.getX());
+				tempPoint.add(be.getY());
+				
+				line.add(tempPoint);
+			}
+			
+			avgExtremeMap.put(frequencyBand.getStartFrequency() + "-" + frequencyBand.getStopFrequency(), line);
+		}
+		
+		return avgExtremeMap;
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public Map<String, List<List<List<Float>>>> getAvgDataList(String warningTemplateId, int row) {
+		
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY create_time";
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class);
+		
+		Map<String, List<List<List<Float>>>> spectrmMap = new HashMap<String, List<List<List<Float>>>>();
+		
+		for(FREQUENCYBAND frequencyBand : frequencyBandList) {
+			
+			List<List<List<Float>>> lists = new ArrayList<List<List<Float>>>();
+			for (int i = 1; i <= row; i ++) {
+				sql = "SELECT x,y FROM avgData WHERE frequencyBand_id='" + frequencyBand.getId() + "' and row=" + i + " ORDER BY x";
+				List<BeanAvg> listRow = (List<BeanAvg>) avgDataDAO.findByQuery(sql, BeanAvg.class);
+				
+				List<List<Float>> listTemp = new ArrayList<List<Float>>();
+				for (Iterator<BeanAvg> iterator = listRow.iterator(); iterator.hasNext();) {
+					List<Float> tempPoint = new ArrayList<Float>();
+					BeanAvg ba = (BeanAvg) iterator.next();
+					
+					tempPoint.add(ba.getX());
+					tempPoint.add(ba.getY());
+					
+					listTemp.add(tempPoint);
+				}
+				
+				lists.add(listTemp);
+			}
+			
+			spectrmMap.put(frequencyBand.getStartFrequency() + "-" + frequencyBand.getStopFrequency(), lists);
+			
+		}
+		
+		
+		
+		return spectrmMap;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<WARNINGTEMPLATE> getWarningTemplateIdAndNameListByDeviceNum(String deviceNum) {
+		
+		String sql = "SELECT id FROM device WHERE device_num='" + deviceNum + "'";
+		
+		DEVICE device = (DEVICE) deviceDAO.findByQuery(sql, DEVICE.class).get(0);
+		
+		sql = "SELECT id, template_name FROM warningtemplate WHERE device_id='" + device.getId() + "' ORDER BY create_time DESC";
+		
+		List<WARNINGTEMPLATE> list = (List<WARNINGTEMPLATE>)warningTemplateDAO.findByQuery(sql, WARNINGTEMPLATE.class);
+		
+		return list;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<WARNINGTEMPLATE> getWarningTemplateListByDeviceNum(String deviceNum) {
+		
+		String sql = "SELECT id FROM device WHERE device_num='" + deviceNum + "'";
+		String deviceId = (String) deviceDAO.findByQueryForList(sql, String.class).get(0);
+		
+		sql = "SELECT * FROM warningtemplate WHERE device_id='" + deviceId + "' ORDER BY create_time DESC";
+		
+		List<WARNINGTEMPLATE> warningTemplateList = (List<WARNINGTEMPLATE>)warningTemplateDAO.findByQuery(sql, WARNINGTEMPLATE.class);
+		
+		for(int i = 0; i < warningTemplateList.size(); i ++) {
+			sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateList.get(i).getId() + "' ORDER BY startFrequency";
+			warningTemplateList.get(i).setFrequencyBandList((List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class));
+		}
+		
+		return warningTemplateList;
+	}
+	
+	
+	@SuppressWarnings({ "unchecked"})
+	@Override
+	public Map<String, List<List<Float>>> getWarningLine(String warningTemplateId) {
+		
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY create_time";
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) frequencyBandDAO.findByQuery(sql, FREQUENCYBAND.class);
+		
+		Map<String, List<List<Float>>> warningLineMap = new HashMap<String, List<List<Float>>>();
+		for(FREQUENCYBAND frequencyBand : frequencyBandList) {
+			List<List<Float>> line = new ArrayList<List<Float>>();
+			
+			sql = "SELECT x,y FROM warningLine WHERE active=1 AND frequencyBand_Id='" + frequencyBand.getId() + "' ORDER BY x";
+			List<BeanExtreme> pointList = (List<BeanExtreme>) warningLineDAO.findByQuery(sql, BeanExtreme.class);
+			for (Iterator<BeanExtreme> iterator = pointList.iterator(); iterator.hasNext();) {	
+				List<Float> tempPoint = new ArrayList<Float>();	
+				BeanExtreme be = (BeanExtreme) iterator.next();
+				
+				tempPoint.add(be.getX());
+				tempPoint.add(be.getY());
+				
+				line.add(tempPoint);
+			}
+			
+			warningLineMap.put(frequencyBand.getStartFrequency() + "-" + frequencyBand.getStopFrequency(), line);
+		}
+		
+		return warningLineMap;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<List<Float>> updateWarningLine(String warningTemplateId, float startFrequency, float stopFrequency, float threshold, String groupNum){
+		String frequencyList[] = groupNum.split("-");
+		String sql = "SELECT id FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active=1 AND startFrequency=" + frequencyList[0] + " AND stopFrequency=" + frequencyList[1];
+		String frequencyBandId = (String) frequencyBandDAO.findByQueryForList(sql, String.class).get(0);
+		
+		sql = "UPDATE warningLine SET y=" + threshold + " WHERE active=1 AND frequencyBand_id='" + frequencyBandId + "' AND  x>=" + startFrequency + " AND x<=" + stopFrequency;
+		warningLineDAO.executeBySql(sql);
+		
+		sql = "SELECT x,y FROM warningLine WHERE active=1 AND frequencyBand_id='" + frequencyBandId + "' ORDER BY x";
+		List<BeanExtreme> pointList = (List<BeanExtreme>) warningLineDAO.findByQuery(sql, BeanExtreme.class);
+		
+		List<List<Float>> line = new ArrayList<List<Float>>();
+		for (Iterator<BeanExtreme> iterator = pointList.iterator(); iterator.hasNext();) {
+			List<Float> tempPoint = new ArrayList<Float>();
+			
+			BeanExtreme be = (BeanExtreme) iterator.next();
+			
+			tempPoint.add(be.getX());
+			tempPoint.add(be.getY());
+			
+			line.add(tempPoint);
+		}
+		
+		return line;	
+	}
+	
+}

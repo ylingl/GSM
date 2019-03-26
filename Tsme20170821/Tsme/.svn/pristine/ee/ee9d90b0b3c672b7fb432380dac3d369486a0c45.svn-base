@@ -1,0 +1,45 @@
+
+body, div, input , form{
+	margin: 0;
+	padding: 0;
+}
+
+#content {
+	margin: auto;
+	padding-left: 20px;
+	padding-right: 20px;
+	align:center;
+	height:400px;
+}
+
+.chart_spline {
+	text-align: center;
+	pointer-events: none;
+	float: left;
+	height:400px;
+}
+
+.warningTable {
+	float: right;
+	text-align:center;
+	border:1px solid #F00;
+	width:560px;
+	height:400px;
+	overflow-y:auto;
+}
+
+.warningTitle {
+	border-bottom:1px solid #F00;
+}
+
+#loading_div {
+	width: 32px;
+	height: 32px;
+	background: url(/Tsme/images/dialog/ajax_loading.gif) 0px 0px no-repeat
+		rgba(255, 255, 255, 0);
+	position: absolute;
+	z-index: 999;
+	display: none;
+	top: 50%;
+	right: 50%;
+}

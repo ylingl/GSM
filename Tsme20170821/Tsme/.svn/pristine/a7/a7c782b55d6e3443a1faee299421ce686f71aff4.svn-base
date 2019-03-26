@@ -1,0 +1,212 @@
+package utils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.data.bean.BeanAvg;
+import mvc.spectra.WarningData;
+
+public class MonitorParameter {
+	public enum status_enum {
+		start, transfer, stop, stopped
+	}
+	
+	public enum purpose_enum {
+		template, monitor
+	}
+	
+	private boolean training = false;
+	
+	private boolean warning = false;
+
+	//private purpose_enum purpose;//用途
+
+	private String templateId; //模板id，用来保存训练数据文件的时候使用
+	
+	private int originalDataFileOrdno = 0; //模板文件序号
+	
+	private int overTime_minute; //超时分钟数，当主监控超过这个时间不请求数据，就通知设备，不用上报数据了
+	
+	private String deviceAddress;
+	
+	private String clientId;//客户端id，c++客户端在地图页面打开监控页面的时候使用
+
+	private status_enum status;
+
+	private int interval = 1; //刷新频率，毫秒数，默认值为1ms
+
+	private List<Float> frequencyList = new ArrayList<Float>();//奇数为起始频率，偶数为终止频率
+
+	private int maxMeans;// 最大监测频率
+
+	private int bandWidth;// 带宽
+
+	private int fftSize;// ftt 步长
+	
+	private Map<String, String> frequencyBandMap = new HashMap<String, String>();
+	
+	private Map<String, List<List<Float>>> warningLineMap = new HashMap<String, List<List<Float>>>();
+	
+	private Map<String, List<BeanAvg>> warningPointMap = new HashMap<String, List<BeanAvg>>();
+	
+	private long lastPopDataTime; //主监控客户端，最后一次获取数据的时间，如果超时了，则停止监控
+	
+	private Map<String, ArrayList<WarningData>> warnDataMap = new HashMap<String, ArrayList<WarningData>>();
+
+	public status_enum getStatus() {
+		return status;
+	}
+
+	public void setStatus(status_enum status) {
+		this.status = status;
+	}
+
+	public int getInterval() {
+		return interval;
+	}
+
+	public void setInterval(int interval) {
+		if(interval > 0)
+			this.interval = interval;
+	}
+
+	public String getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+
+	public long getLastPopDataTime() {
+		return lastPopDataTime;
+	}
+
+	public void setLastPopDataTime(long lastPopDataTime) {
+		this.lastPopDataTime = lastPopDataTime;
+	}
+	
+	//判断主监控客户端，请求数据是否超时，距离上次获取数据的时间超过1分钟，则判断为已经断开，则停止获取数据
+	public boolean isMainClientOverTime(){
+		long now = System.currentTimeMillis();
+		if((now-getLastPopDataTime()) > getOverTime_minute() * 60 *1000){
+			return true;
+		}
+		return false;
+	}
+
+	public String getDeviceAddress() {
+		return deviceAddress;
+	}
+
+	public void setDeviceAddress(String deviceAddress) {
+		this.deviceAddress = deviceAddress;
+	}
+
+	public int getMaxMeans() {
+		return maxMeans;
+	}
+
+	public void setMaxMeans(int maxMeans) {
+		this.maxMeans = maxMeans;
+	}
+
+	public int getFftSize() {
+		return fftSize;
+	}
+
+	public void setFftSize(int fftSize) {
+		this.fftSize = fftSize;
+	}
+	
+	public String getTemplateId() {
+		return templateId;
+	}
+
+	public void setTemplateId(String templateId) {
+		this.templateId = templateId;
+	}
+
+	public int getOverTime_minute() {
+		return overTime_minute;
+	}
+
+	public void setOverTime_minute(int overTime_minute) {
+		this.overTime_minute = overTime_minute;
+	}
+	
+	public int getOriginalDataFileOrdno() {
+		return originalDataFileOrdno;
+	}
+
+	public void setOriginalDataFileOrdno(int originalDataFileOrdno) {
+		this.originalDataFileOrdno = originalDataFileOrdno;
+	}
+
+	public List<Float> getFrequencyList() {
+		return frequencyList;
+	}
+
+	public void setFrequencyList(List<Float> frequencyList) {
+		this.frequencyList = frequencyList;
+	}
+
+	public int getBandWidth() {
+		return bandWidth;
+	}
+
+	public void setBandWidth(int bandWidth) {
+		this.bandWidth = bandWidth;
+	}
+
+	public Map<String, ArrayList<WarningData>> getWarnDataMap() {
+		return warnDataMap;
+	}
+
+	public void setWarnDataMap(Map<String, ArrayList<WarningData>> warnDataMap) {
+		this.warnDataMap = warnDataMap;
+	}
+
+	public Map<String, List<List<Float>>> getWarningLineMap() {
+		return warningLineMap;
+	}
+
+	public void setWarningLineMap(Map<String, List<List<Float>>> warningLineMap) {
+		this.warningLineMap = warningLineMap;
+	}
+
+	public Map<String, List<BeanAvg>> getWarningPointMap() {
+		return warningPointMap;
+	}
+
+	public void setWarningPointMap(Map<String, List<BeanAvg>> warningPointMap) {
+		this.warningPointMap = warningPointMap;
+	}
+
+	public Map<String, String> getFrequencyBandMap() {
+		return frequencyBandMap;
+	}
+
+	public void setFrequencyBandMap(Map<String, String> frequencyBandMap) {
+		this.frequencyBandMap = frequencyBandMap;
+	}
+
+	public boolean isTraining() {
+		return training;
+	}
+
+	public void setTraining(boolean training) {
+		this.training = training;
+	}
+
+	public boolean isWarning() {
+		return warning;
+	}
+
+	public void setWarning(boolean warning) {
+		this.warning = warning;
+	}
+
+}

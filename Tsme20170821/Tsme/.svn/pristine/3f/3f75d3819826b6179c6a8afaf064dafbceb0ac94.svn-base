@@ -1,0 +1,39 @@
+package tsme.table.rescPath.DAO;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPracticeImpl;
+import tsme.table.controlProperty.bean.CONTROLPROPERTY;
+import tsme.table.rescPath.bean.RESCPATH;
+
+@Repository("rescPathDAO")
+public class RescPathDAOImpl extends TsmeMainDAOPracticeImpl<RESCPATH> implements RescPathDAO{
+	
+	@SuppressWarnings("unchecked")
+	public List<RESCPATH> cascadedQueryAll(boolean active, String order) {
+		String sql1 = "";
+		if(active == true){
+			sql1 = "SELECT * FROM rescPath WHERE active=1 ORDER BY create_time " + order;
+		}
+		else{
+			sql1 = "SELECT * FROM rescPath WHERE active=0 ORDER BY create_time " + order;
+		}
+		List<RESCPATH> rescPathList = (List<RESCPATH>) super.findByQuery(sql1, RESCPATH.class);
+		
+		if(rescPathList.isEmpty()){
+			return null;
+		}
+		else{
+			for(RESCPATH rescPath : rescPathList) {
+				String sql2 = "SELECT * FROM controlProperty WHERE rescPath_id='" + rescPath.getId() + "' ORDER BY create_time " + order;
+				List<CONTROLPROPERTY> controlPropertyList = (List<CONTROLPROPERTY>) super.findByQuery(sql2, CONTROLPROPERTY.class);
+				
+				rescPath.setControlPropertys(controlPropertyList);
+			}
+			
+			return rescPathList;
+		}
+	}
+}

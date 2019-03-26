@@ -1,0 +1,11 @@
+li{
+	list-style:none;
+	font-size:12px;
+	margin-top:5px;
+	font-family:Microsoft YaHei;
+	color:#545454;
+}
+
+li span.value{
+	margin-left:10px;
+}

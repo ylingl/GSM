@@ -1,0 +1,73 @@
+package logic.data;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import mvc.data.WarningTemplateRecPara;
+import tsme.table.originalData.bean.ORIGINALDATA;
+import tsme.table.trainingData.bean.TRAININGDATA;
+import tsme.table.warningTemplate.bean.WARNINGTEMPLATE;
+
+public interface DataAnalysis {
+	
+	public WARNINGTEMPLATE createWarningTemplate(WarningTemplateRecPara warningTemplateRecPara, HttpSession httpSession);
+	
+	/**
+	 * 将上报的js的数据导入数据库，用来计算均值
+	 * @param fileName
+	 * @return
+	 */
+	public int createAvgData(String warningTemplateId);
+	
+	/**
+	 * 计算第N次均值的极值点：规则就是这个点的前后至少三个点比起大或小。
+	 * @param row
+	 */
+	public void createAvgExtreme(int row, String warningTemplateId);
+
+	/**
+	 * 生成均差，写入均差表
+	 */
+	public void createWaringLine(int baseRowNum, int peakRowNum, String warningTemplateId);
+	
+	
+	public List<WARNINGTEMPLATE> getWarningTemplateIdAndNameListByDeviceNum(String deviceNum);
+	
+	public List<WARNINGTEMPLATE> getWarningTemplateListByDeviceNum(String deviceNum);
+	
+	/**
+	 * @param row
+	 * @return
+	 */
+	public Map<String, List<List<Float>>> getAvgExtreme(String warningTemplateId, int row);
+	
+	/**
+	 * 获取均值线和极值线
+	 * @param row
+	 * @return
+	 */
+	public Map<String, List<List<List<Float>>>> getAvgDataList(String warningTemplateId,int row);
+
+	/**
+	 * 获取预警线
+	 * @param warningTemplateId
+	 * @return
+	 */
+	public Map<String, List<List<Float>>> getWarningLine(String warningTemplateId);
+	
+	public List<List<Float>> updateWarningLine(String warningTemplateId, float startFrequency, float stopFrequency, float threshold, String groupNum);
+
+	public boolean deleteWarningTemplate(String warningTemplate_id);
+
+	/**
+	 * 保存原始数据
+	 * @param originalData
+	 * @return
+	 */
+	public int saveOriginalData(ORIGINALDATA originalData);
+	
+	public int saveTrainingData(TRAININGDATA trainingData);
+}
+

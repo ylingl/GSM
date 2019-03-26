@@ -1,0 +1,61 @@
+package utils;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+
+import mvc.client.ReportStatus;
+import mvc.spectra.SpectraData;
+import utils.MonitorParameter.status_enum;
+
+/**
+ * 数据缓冲池
+ * 
+ * @author kitty
+ */
+public class DataPoolTools {
+	
+	//设备参数设置
+	public static Map<String, MonitorParameter> monitorDeviceMap = new HashMap<String, MonitorParameter>();
+
+	//deviceId-ReportStatus
+	public static Map<String, ReportStatus> monitorReportStatusMap = new HashMap<String, ReportStatus>();
+		
+	//客户端上传的实时监控数据缓冲池
+	public static Map<String, HashMap<String, Queue<ArrayList<Float>>>> monitorDataPool = new HashMap<String, HashMap<String, Queue<ArrayList<Float>>>>();
+
+	//需要写文件的数据缓冲池
+	public static Map<String, HashMap<String, Queue<ArrayList<Float>>>> trainingDataPool = new HashMap<String, HashMap<String, Queue<ArrayList<Float>>>>();
+	
+	//当前待处理客户端监测池，用于C客户端和内嵌浏览的监测
+	public static Map<String, HashMap<String, Queue<ArrayList<Float>>>> showDataPool = new HashMap<String, HashMap<String, Queue<ArrayList<Float>>>>();
+	
+	public static Map<String, MonitorCopy> monitorShowPool = new HashMap<String, MonitorCopy>();
+	
+	//clientId-deviceId-预警曲线
+	public static Map<String, SpectraData> warningPool =  new HashMap<String, SpectraData>();
+	
+	//清除超过一定时间没有获取数据的监控，当超时或者停止监控，并且缓冲值数据为空的时候才移除设备
+	public static void clearOverTimeMonitor() {
+		
+		Collection<String> deviceNums = monitorDeviceMap.keySet();
+		
+		for (String deviceNum : deviceNums) {
+			
+			if(monitorDeviceMap.get(deviceNum).isMainClientOverTime() || monitorDeviceMap.get(deviceNum).getStatus().equals(status_enum.stopped)){
+				/*
+				if(!monitorData2FilePool.containsKey(deviceNum) 
+					|| (monitorData2FilePool.containsKey(deviceNum) && monitorData2FilePool.get(deviceNum).size() == 0)) {
+					
+					monitorDeviceMap.remove(deviceNum);
+					monitorData2FilePool.remove(deviceNum);
+					monitorDataPool.remove(deviceNum);
+				}
+				*/
+			}
+		}
+	}
+	
+}

@@ -1,0 +1,82 @@
+package mvc.map;
+
+//设备及基站地理信息查询结果
+public class GeoMsg {
+
+	//设备编号
+	private String device_num;
+	
+	//设备型号
+	private String device_type;
+	
+	//简介
+	private String introduction;
+	
+	//经度
+	private float LNG;
+	
+	//纬度
+	private float LAT;
+	
+	//代表设备或基站
+	private String point_type;
+	
+	private String km_stone;
+	
+	public String getPoint_type() {
+		return point_type;
+	}
+
+	public void setPoint_type(String point_type) {
+		this.point_type = point_type;
+	}
+
+	public String getIntroduction() {
+		return introduction;
+	}
+	
+	public void setIntroduction(String introduction) {
+		this.introduction = introduction;
+	}
+	
+	public float getLNG() {
+		return LNG;
+	}
+	
+	public void setLNG(float LNG) {
+		this.LNG = LNG;
+	}
+	
+	public float getLAT() {
+		return LAT;
+	}
+	
+	public void setLAT(float LAT) {
+		this.LAT = LAT;
+	}
+
+	public String getDevice_type() {
+		return device_type;
+	}
+
+	public void setDevice_type(String device_type) {
+		this.device_type = device_type;
+	}
+
+	public String getDevice_num() {
+		return device_num;
+	}
+
+	public void setDevice_num(String device_num) {
+		this.device_num = device_num;
+	}
+
+	public String getKm_stone() {
+		return km_stone;
+	}
+
+	public void setKm_stone(String km_stone) {
+		this.km_stone = km_stone;
+	}
+
+}

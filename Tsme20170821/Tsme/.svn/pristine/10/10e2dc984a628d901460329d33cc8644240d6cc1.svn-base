@@ -1,0 +1,14 @@
+package tsme.table.warningLine.DAO;
+
+import java.util.List;
+import java.util.Map;
+
+import logic.data.bean.BeanAvg;
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPractice;
+import tsme.table.warningLine.bean.WARNINGLINE;
+
+public interface WarningLineDAO extends TsmeMainDAOPractice<WARNINGLINE> {
+	
+	public Map<String, List<BeanAvg>> findPointListByTemplateId(String templateId);
+	
+}

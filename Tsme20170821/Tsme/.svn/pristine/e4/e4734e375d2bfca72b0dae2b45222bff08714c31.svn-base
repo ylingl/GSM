@@ -1,0 +1,124 @@
+package mvc.map;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import logic.map.MapService;
+import net.sf.json.JSONArray;
+
+@Controller
+public class MapController {
+	
+	@Autowired
+	@Qualifier("mapService")
+	MapService mapService;
+	
+	@RequestMapping("mapIndex")
+	public ModelAndView mapIndex(){
+		ModelAndView mav = new ModelAndView();
+		
+		//获取基站
+		List<GeoMsg> bsGeoMsgs = mapService.getBSGeoMsg();
+		mav.addObject("bsGeoMsgs", bsGeoMsgs);
+		
+		//获取监测设备
+		List<GeoMsg> deviceGeoMsgs = mapService.getDeviceGeoMsg();
+		mav.addObject("deviceGeoMsgs", deviceGeoMsgs);
+		
+		bsGeoMsgs.addAll(deviceGeoMsgs);
+		mav.addObject("geoMsgs", bsGeoMsgs);
+		mav.setViewName("displayAll");
+		return mav;
+	}
+	
+	@RequestMapping("mapIndexBaidu")
+	public ModelAndView mapIndexBaidu(){
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("displayAllBaidu");
+		return mav;
+	}
+	@RequestMapping("getBSGeoMsg")
+	public void getBSGeoMsg(HttpServletResponse res){
+		List<GeoMsg> geoMsgs = mapService.getBSGeoMsg();
+		JSONArray array = JSONArray.fromObject(geoMsgs);
+		res.setContentType("text/json;charset=UTF-8");
+		res.setCharacterEncoding("UTF-8");
+		PrintWriter writer;
+		try {
+			writer = res.getWriter();
+			String str = array.toString();
+			writer.print(str);
+			writer.flush();
+			writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@RequestMapping("getDeviceGeoMsg")
+	public void getDeviceGeoMsg(HttpServletResponse res){
+		List<GeoMsg> geoMsgs = mapService.getDeviceGeoMsg();
+		JSONArray array = JSONArray.fromObject(geoMsgs);
+		res.setContentType("text/json;charset=UTF-8");
+		res.setCharacterEncoding("UTF-8");
+		PrintWriter writer;
+		try {
+			writer = res.getWriter();
+			String str = array.toString();
+			writer.print(str);
+			writer.flush();
+			writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@RequestMapping("showBSDetail")
+	public void showBSDetail(float LNG, float LAT, HttpServletResponse response) {
+		/*ModelAndView mav = new ModelAndView();
+		BASESTATION baseStation = mapService.getBSInfoWithPosition(LNG, LAT);
+		if(baseStation != null) {
+			mav.addObject("BS_id", baseStation.getId());
+			mav.addObject("BS_intro", baseStation.getIntroduction());
+			mav.addObject("BS_lng", LNG);
+			mav.addObject("BS_lat", LAT);
+		}else {
+			mav.addObject("station", "unfound");
+		}
+		mav.setViewName("showBSDetail");*/
+		
+		try {
+			PrintWriter writer = response.getWriter();
+			writer.print("123");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	//	return mav;
+	}
+	
+	@RequestMapping("loadSearch")
+	public ModelAndView loadSearch() {
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("search");
+		return mav;
+	}
+	
+	@RequestMapping("promptForm")
+	public ModelAndView promptForm(){
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("promptForm");
+		return mav;
+	}
+}

@@ -1,0 +1,94 @@
+
+body, div, input , form{
+	margin: 0;
+	padding: 0;
+}
+
+.chart_spline {
+	text-align: center;
+	border: 1px solid #F00;
+}
+
+.warningTable {
+	float: right;
+	text-align:center;
+	border:1px solid #F00;
+	width:560px;
+	height:400px;
+	overflow-y:auto;
+}
+
+.warningTitle {
+	border-bottom:1px solid #F00;
+}
+
+.content {
+	margin: auto;
+	padding-left: 20px;
+	padding-right: 20px;
+	align:center;
+	height:400px;
+}
+
+#loading_div {
+	width: 32px;
+	height: 32px;
+	background: url(/Tsme/images/dialog/ajax_loading.gif) 0px 0px no-repeat
+		rgba(255, 255, 255, 0);
+	position: absolute;
+	z-index: 999;
+	display: none;
+	top: 50%;
+	right: 50%;
+}
+
+#slider .ui-slider-range {background: #729fcf;}  
+#slider .ui-slider-handle {border-color: #729fcf;}
+
+a {
+	cursor: pointer;
+}
+
+.prev{
+	width:66px;
+	height:66px;
+	display:inline-block;
+	background: url(/Tsme/images/icons/icon.png) -486px -553px no-repeat;
+}
+
+.prev:hover {
+	background: url(/Tsme/images/icons/icon.png) -484px -625px no-repeat;
+}
+
+.start{
+	width:66px; 
+	height:66px; 
+	display:inline-block; 
+	background: url(/Tsme/images/icons/icon.png) -641px -555px no-repeat;
+}
+
+.start:hover {
+	background: url(/Tsme/images/icons/icon.png) -639px -627px no-repeat;
+}
+
+.stop{
+	width:66px; 
+	height:66px; 
+	display:inline-block; 
+	background: url(/Tsme/images/icons/icon.png) -557px -555px no-repeat;
+}
+
+.stop:hover {
+	background: url(/Tsme/images/icons/icon.png) -555px -627px no-repeat;
+}
+
+.next{
+	width:66px; 
+	height:66px; 
+	display:inline-block; 
+	background: url(/Tsme/images/icons/icon.png) -718px -553px no-repeat;
+}
+
+.next:hover {
+	background: url(/Tsme/images/icons/icon.png) -716px -625px no-repeat;
+}

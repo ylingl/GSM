@@ -1,0 +1,93 @@
+package mvc.account;
+
+public class MyLinkedList {
+
+	Node head = null;
+	public void addNode(int d){
+		Node newNode = new Node(d);
+		if(head == null){
+			head = newNode;
+			return;
+		}
+		Node tmp = head;
+		
+		while(tmp.next != null){
+			tmp = tmp.next;
+		}
+		tmp.next = newNode;
+	}
+	
+	public int length(){
+		int length = 0;
+		Node tmp = head;
+		while(tmp != null){
+			tmp = tmp.next;
+			length ++;
+		}
+		return length;
+	}
+	
+	
+	public Boolean deleteNode(int index){
+		if(index < 1 || index > length()){
+			return false;
+		}
+		if(index ==1){
+			head = head.next;
+		}
+		int i = 1;
+		Node preNode = head;
+		Node curNode = preNode.next;
+		while(curNode != null){
+			if(i == index){
+				preNode.next = curNode.next;
+				return true;
+			}
+			preNode = curNode;
+			curNode = curNode.next;
+			i ++;
+		}
+		return true;
+	}
+	
+	public Node orderList(){
+		Node nextNode = null;
+		int temp = 0;
+		Node curNode = head;
+		while(curNode.next != null){
+			nextNode = curNode.next;
+			while(nextNode != null){
+				if(curNode.data > nextNode.data){
+					temp = nextNode.data;
+					nextNode.data = curNode.data;
+					curNode.data = temp;
+				}
+				nextNode = nextNode.next;
+			}
+			curNode = curNode.next;
+		}
+		return head;
+	}
+	
+	public void printList(){
+		Node tmp = head;
+		while(tmp != null){
+			System.out.println(tmp.data);
+			tmp = tmp.next;
+		}
+	}
+	
+	public static void main(String[] args){
+		MyLinkedList list = new MyLinkedList();
+		list.addNode(5);
+		list.addNode(3);
+		list.addNode(1);
+		list.addNode(3);
+		System.out.println("listLen=" + list.length());
+		System.out.println("before order:");
+		list.printList();
+		list.orderList();
+		System.out.println("after order:");
+		list.printList();
+	}
+}

@@ -1,0 +1,48 @@
+package security.implementations;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import security.MyUserDetails.MyProperty;
+import security.MyUserDetails.MyUserDetails;
+import tsme.table.supervisor.DAO.SupervisorDAO;
+import tsme.table.userRole.DAO.UserRoleDAO;
+import tsme.table.userRole.bean.USERROLE;
+
+public class MyUserDetailService implements UserDetailsService{
+
+	@Autowired
+	@Qualifier("supervisorDAO")
+	private SupervisorDAO supervisorDAO;
+	
+	@Autowired
+	@Qualifier("userRoleDAO")
+	private UserRoleDAO userRoleDAO;
+	
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		
+		MyUserDetails myUserDetails = new MyUserDetails();
+		
+		myUserDetails = supervisorDAO.findAccountByUsername(username);
+
+		List<USERROLE> userRoleList = userRoleDAO.findByForeignKey(myUserDetails.getId());
+		
+		List<MyProperty> myPropertys = new ArrayList<MyProperty>();
+		for(USERROLE role : userRoleList){
+			MyProperty myProperty = new MyProperty();
+			myProperty.setRole(role.getRole_name());
+			myPropertys.add(myProperty);
+		}
+		
+		myUserDetails.setMyPropertys(myPropertys);
+		
+		return myUserDetails;
+	}
+}

@@ -1,0 +1,42 @@
+.searchContent{
+	width:240px;
+	height:240px;
+}
+
+.searchContent .itemsArea{
+	width:180px;
+	height:200px;
+	position:absolute;
+}
+
+.searchContent .itemsArea ul li{
+	width:180px;
+	height:32px;
+	border-bottom:1px gray solid;
+	font-family:Microsoft YaHei;
+	font-size:12px;
+}
+
+.searchContent .itemsArea ul li span{
+	width:120px;
+	height:30px;
+}
+
+.searchContent .itemsArea ul li input{
+	width:40px;
+	height:30px;
+}
+
+.searchContent .itemsArea ul li input:focus{
+	outline: -webkit-focus-ring-color auto 0px;
+	
+}
+
+.searchContent .btnSearch{
+	width:60px;
+	height:98px;
+	left:180px;
+	position:absolute;
+	border-left:1px gray solid;
+	border-bottom:1px gray solid;
+}

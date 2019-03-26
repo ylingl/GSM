@@ -1,0 +1,67 @@
+package mvc.client;
+
+import java.util.HashMap;
+
+public class Response {
+
+	private static HashMap<String, String> resMap = new HashMap<String, String>();
+	public static final int resp_code_normal = 10;
+	public static final int resp_code_begin_monitor = 11;
+	public static final int resp_code_stop_monitor = 12;
+	public static final int resp_code_chg_report_interval = 13;
+	public static final int resp_code_chg_history_interval = 14;
+	public static final int resp_code_error = 90;
+	public static final int resp_code_status_error = 91;
+	public static final int resp_code_monitor_vacant = 92;
+
+	static {
+		resMap.put(String.valueOf(resp_code_normal), "正常");
+		resMap.put(String.valueOf(resp_code_begin_monitor), "开始监测");
+		resMap.put(String.valueOf(resp_code_stop_monitor), "停止监测");
+		resMap.put(String.valueOf(resp_code_chg_report_interval), "报告成功，更改报告状态的时间间隔");
+		resMap.put(String.valueOf(resp_code_chg_history_interval), "报告成功，更改定时上传时间间隔");
+		resMap.put(String.valueOf(resp_code_error), "错误");
+		resMap.put(String.valueOf(resp_code_status_error), "服务器未处于接受转态");
+		resMap.put(String.valueOf(resp_code_monitor_vacant), "服务器未启动监测");
+	}
+	
+	private String id;
+	private int code;
+	private String msg;
+	private ResponseData data;
+
+	
+	public String getMsg() {
+		msg = resMap.get(String.valueOf(getCode()));
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
+
+	public ResponseData getData() {
+		return data;
+	}
+
+	public void setData(ResponseData data) {
+		this.data = data;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public int getCode() {
+		return code;
+	}
+
+	public void setCode(int code) {
+		this.code = code;
+	}
+
+}

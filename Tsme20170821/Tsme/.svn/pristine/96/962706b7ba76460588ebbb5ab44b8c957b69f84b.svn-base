@@ -1,0 +1,80 @@
+/*Clear margin and padding*/
+html,body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,p,blockquote,th,td
+{
+	margin: 0;
+	padding: 0;
+}
+ 
+/*Clear border*/
+html,body,img
+{
+	border: 0;
+}
+/*设置自适应宽度*/
+#adaptive{
+	min-width:1100px;
+	max-width:1200px;
+	_width:expression((document.documentElement.clientWidth||document.body.clientWidth)>1200?"1200px":((document.documentElement.clientWidth||document.body.clientWidth)<1100?"1100px":"auto"));
+	border-color:gray;
+	border-style:dotted;
+	background:#ffffff;
+}
+#adaptive:after{
+	content:".";
+	height:0;
+	display:block;
+	clear:both;
+}
+body,div,th,td {
+	font-family:"宋体";
+	font-size:14px;	
+}
+/*提示错误信息*/
+.errorClass{
+ 	font-size:12px;
+ 	color: #FF0000;
+}
+.button{
+	font-size:12px;
+}
+#product-title{
+	border: 1px solid #aed0ea;
+	font-family: "宋体";
+	font-weight: bold;
+	font-size: 18px;
+	color:grey;	
+	PADDING-TOP: 6px;
+	PADDING-bottom: 6px; 
+	PADDING-RIGHT: 7px; 
+	PADDING-LEFT: 7px;
+	background: #deedf7;
+}
+#tools{
+	width:20%;
+	height:1000px;
+	background:#deedf7;
+	float:left;
+}
+#main-body{
+	width:79%;
+	float:right;
+}
+#main-body-width{
+	width:800px;
+}
+#box{
+	height:35px;
+	background:#deedf7;
+	font-family: "宋体";
+	font-weight: bold;
+	font-size: 18px;
+	padding-top:8px;
+}
+.formatError{
+	color:#FFFFFF;
+	font-size:12px;
+}
+.permissionError{
+	color:#FFFFFF;
+	font-size:12px;
+}

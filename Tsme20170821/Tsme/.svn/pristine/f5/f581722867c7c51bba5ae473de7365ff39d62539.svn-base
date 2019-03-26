@@ -1,0 +1,35 @@
+package tsme.table.warningLine.DAO;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Repository;
+
+import logic.data.bean.BeanAvg;
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPracticeImpl;
+import tsme.table.frequencyBand.bean.FREQUENCYBAND;
+import tsme.table.warningLine.bean.WARNINGLINE;
+
+@Repository("warningLineDAO")
+public class WarningLineDAOImpl extends TsmeMainDAOPracticeImpl<WARNINGLINE> implements WarningLineDAO {
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Map<String, List<BeanAvg>> findPointListByTemplateId(String templateId) {
+		
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + templateId + "' AND active = 1 ORDER BY create_time";
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) findByQuery(sql, FREQUENCYBAND.class);
+		
+		Map<String, List<BeanAvg>> warningPointMap = new HashMap<String, List<BeanAvg>>();
+		for(FREQUENCYBAND frequencyBand : frequencyBandList) {
+			sql = "SELECT x,y FROM warningLine WHERE frequencyBand_Id='" + frequencyBand.getId() + "' ORDER BY x";
+			List<BeanAvg> pointList = (List<BeanAvg>) findByQuery(sql, BeanAvg.class);
+			
+			warningPointMap.put(frequencyBand.getStartFrequency() + "-" + frequencyBand.getStopFrequency(), pointList);
+		}
+		
+		return warningPointMap;
+	}
+
+}

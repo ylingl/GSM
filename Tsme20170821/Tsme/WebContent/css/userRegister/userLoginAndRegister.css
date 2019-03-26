@@ -1,0 +1,398 @@
+@CHARSET "UTF-8";
+
+.backgroundDiv{ 
+	width:100%; 
+	margin:0 auto; 
+	padding:70px 0 0 0;
+	font-size:14px;
+	font-family:"微软雅黑", Microsoft YaHei;
+	position:relative;
+	background-color:#f2f1e5;
+}
+
+.backgroundDiv .loginInfo{
+	background:url("/Tsme/images/background/login.png") no-repeat scroll 0px -0px rgba(0,0,0,0);
+	margin:0 auto;
+	width:815px;
+	height:465px; 
+}
+
+.backgroundDiv .loginInfo .navTitlePos{
+	margin-left:415px;
+	width:385px;
+	overflow:hidden;
+	background-color:white;
+	border-radius: 5px;
+}
+
+.backgroundDiv .loginInfo .navTitlePos span.on{ 
+	color:#4fc1e9; 
+	margin:4px auto;
+	padding-left:5px;
+	cursor:default;
+	font-size:20px; 
+	display:inline-block;
+}
+
+.backgroundDiv .loginInfo .navTitlePos span.stateChange{
+	float:right; 
+	margin:4px auto; 
+	color:#252626;
+	padding-right:8px;
+}
+.backgroundDiv .loginInfo .navTitlePos a{
+	cursor:pointer;
+}
+.backgroundDiv .loginInfo .navTitlePos span.emailValidate{
+	float:right; 
+	margin:4px auto;
+	padding-right:8px;
+	display:in-line;
+}
+
+.backgroundDiv .loginInfo .userInfoDetail{ 
+	position:relative;
+	width:100%; 
+	height:100%; 
+	color:#000000;
+}
+
+.validateFormInput {
+	height:40px;
+	width:370px; 
+	color:#252626; 
+	margin:5px 0 0 5px; 
+	font-family:"微软雅黑", Microsoft YaHei;
+	border:1px solid #a1a4a6;
+	z-index: 2;
+}
+
+.validateFormInput .accountIcon{
+	background:url("/Tsme/images/icons/icon.png") no-repeat scroll -228px -208px rgba(0,0,0,0);
+	float:left;
+	margin-top:9px;
+	margin-left:10px;
+	padding-right:10px;
+	width: 22px; 
+	height: 22px; 
+	
+}
+
+.validateFormInput .pwdIcon{
+	background:url("/Tsme/images/icons/icon.png") no-repeat scroll -320px -208px rgba(0,0,0,0);
+	float:left;
+	margin-top:8px;
+	margin-left:12px;
+	padding-right:10px;
+	width: 20px; 
+	height: 25px; 
+	z-index: 1; 
+}
+
+.validateFormInput input.formInput{
+	height:25px; 
+	width:300px;
+	margin:6px auto; 
+	font-size:20px; 
+	border-style:none;
+	font-family:"微软雅黑", Microsoft YaHei;
+	z-index:2;
+	
+}
+.validateFormInput input.formInput:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px white inset;
+    }
+
+.validateFormInput label
+{
+	cursor:text;
+	position:absolute;
+	font-size:18px;
+	background: none repeat scroll 0% 0% transparent;
+	z-index:1;
+	moz-user-select: -moz-none;
+	-moz-user-select: none;
+	-o-user-select:none;
+	-khtml-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+	user-select:none;
+}
+
+.validateFormInput label#userrorLog{
+	font-size:14px;
+	color:#ff0000;
+	left:260px;
+	top:13px;
+}
+.validateFormInput label#pwderrorLog{
+	font-size:14px;
+	color:#ff0000;
+	left:280px;
+	top:60px;
+}
+#validateCodeErrorLog{
+	position:relative;
+	font-size:14px;
+	color:#ff0000;
+	left:40px;
+	top:3px;
+	width:200px;
+	display:inline-block;
+}
+.validateFormInput label#ensurePwdErrorLog{
+	font-size:14px;
+	color:#ff0000;
+	left:245px;
+	top:108px;
+}
+
+.validateFormInput label.loginUserplaceholder {
+	color:#a1a4a6;
+	left:50px;
+	top:15px;
+}
+
+.validateFormInput label.loginPwdplaceholder {
+	color:#a1a4a6;
+	left:50px; 
+	top:62px;
+}
+
+.validateFormInput label.loginPwdConfirmplaceholder {
+	color:#a1a4a6;
+	left:50px; 
+	top:109px;
+}
+
+.validateFormInput label.email{
+	float:left;
+	height:20px; 
+	width:300px; 
+	padding-top:20px; 
+	border-style:none; 
+	font-size:18px;
+	overflow:hidden;
+	color:#000;
+}
+
+.validateFormInput label.emaipwdplaceholder {
+	color:#a1a4a6;
+	left:20px;
+	 top:0px;
+}
+
+.userInfoInputValidate{
+	height:42px;
+	width:400px;
+	color:#a1a4a6; 
+	margin-top:5px;  
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:20px; 
+}
+.validatehide{
+	display:none;
+}
+.userRegisterInputValidate
+{
+	height:54px;
+	width:400px;
+	color:#a1a4a6; 
+	margin-top:25px;  
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:20px; 
+}
+
+
+.userInfoInputValidate .validateCodeInput 
+{
+	float:left;
+	height:40px; 
+	width:230px; 
+	margin-left:5px;
+	border:1px solid #a1a4a6;
+}
+
+.userInfoInputValidate .validateCodeInput label.validateCodeplaceholder
+ {
+ 	cursor:text;
+ 	position:absolute; 
+	color:#a1a4a6;
+ 	font-size:18px; 
+ 	left:20px; 
+ 	top:108px;
+ 	border-style:none;
+    background: none repeat scroll 0% 0% transparent;
+    moz-user-select: -moz-none;
+	-moz-user-select: none;
+	-o-user-select:none;
+	-khtml-user-select:none;
+	-webkit-user-select:none;
+	-ms-user-select:none;
+	user-select:none;
+ }
+ 
+.userInfoInputValidate .userInfoInputValidateInput input.validateCodeInput
+{ 
+	width:180px; 
+	height:30px;
+	margin:2px 2px; 
+	border-style:none; 
+	padding-left:15px;  
+	font-size:20px;
+	font-family:"微软雅黑", Microsoft YaHei;
+}
+
+.userInfoInputValidate .userInfoInputValidateInput label.validateCodeRegisterplaceholder{
+	cursor:text;
+	position:absolute; 
+	color:#a1a4a6;
+	font-size:18px; 
+	left:20px;
+	top:60px;
+	border-style:none; 
+	background: none repeat scroll 0% 0% transparent;
+}
+
+.userInfoInputValidate .userInfoInputValidateInput img.validatePic{
+	float:left;
+	 width:85px; 
+	 height:40px; 
+	 margin-left:3px; 
+	 margin-top:1px; 
+}
+
+.userInfoInputValidate .userInfoInputValidateInput span.validateSpan{
+	float:right;
+	cursor:pointer;
+	color:#252626; 
+	width:70px; 
+	height:22px; 
+	margin-top:10px; 
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:14px;
+}
+
+.userInfoValidateDownload{ 
+	height:30px; 
+	width:400px; 
+	color:#252626; 
+	margin-top:15px; 
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:14px; 
+	display:none;
+}
+
+.userRegisterFault{ 
+	height:10px; 
+	width:400px; 
+	margin-top:5px; 
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:14px; 
+	display:none;
+}
+
+.userInfoValidateDownload span.left{
+	float:left; 
+	height:30px; 
+	width:120px; 
+	margin-top:10px; 
+	margin-left:120px;
+	 color:red;
+}
+
+.userInfoValidateDownload span.right{
+	float:right; 
+	cursor:pointer;
+	height:30px; 
+	width:120px; 
+	line-height:30px;
+	display:block;
+	color:#000000;
+	border:1px solid #a1a4a6;
+	border-radius:3px;
+	text-align:center;
+}
+.userInfoLoginBtn{ 
+	cursor:pointer;
+	height:40px; 
+	width:160px;
+	margin-left:120px;
+	margin-top:25px;  
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:24px;
+	background-color:#4fbfe8;
+	border-radius:4px;
+}
+
+.userInfoLoginBtn span.userLoginSpan{ 
+	color:#ffffff;
+	cursor:pointer;
+	text-align:center;
+	display:block;
+	line-height:40px;
+}
+
+.userInfoQQLogin{ 
+	height:20px; 
+	width:400px; 
+	color:#252626; 
+	margin-top:-15px;
+	padding-left:5px; 
+	font-family:"微软雅黑", Microsoft YaHei; 
+	font-size:14px;
+}
+
+.userInfoQQLogin a.forget{ 
+	height:27px; 
+	width:100px;
+	color:#252626;
+}
+
+.userInfoQQLogin .QQLogin{ 
+	cursor:pointer;
+	float:right; 
+	height:27px; 
+	width:80px;
+}
+
+.userInfoQQLogin .QQLogin div.left{
+	background:url("/Tsme/images/icons/icon.png") no-repeat scroll -414px -208px rgba(0,0,0,0);
+	float:left;
+	height:26px;
+	width:26px;
+	cursor:pointer;
+	padding-top:4px;
+}
+.userInfoQQLogin .QQLogin span.right{
+	float:right;
+	cursor:pointer;
+	padding-top:4px;
+}
+
+.userInfoEmailValidate{ 
+	height:60px; 
+	width:400px; 
+	color:#252626; 
+	margin:30px auto; 
+	font-family:"微软雅黑", Microsoft YaHei; 
+}
+
+.userInfoEmailValidate span.title{
+	float:left; 
+	width:160px; 
+	height:60px; 
+	margin-left:120px; 
+	background-color:transparent; 
+	font-size:20px; 
+	text-align:center;
+}
+
+.userInfoEmailValidate span.check{
+	float:left; 
+	width:400px; 
+	height:20px; 
+	background-color:transparent; 
+	font-size:14px; 
+	text-align:center;
+}

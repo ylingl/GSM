@@ -1,0 +1,634 @@
+var layerLoading;
+
+var chart0;
+var chart1;
+var chart2;
+
+var key0;
+var key1;
+var key2;
+
+var ymin = -130;
+var ymax = -20;
+var ytick = 10;
+var xtick = 0.2;
+
+var templateName = "";
+var longitude = 0;
+var latitude = 0;
+var fftSize = 0;
+var bandWidth = 0;
+var maxMeans = 0;
+
+var count;
+var templateId;
+var employ;
+var deviceNum;
+
+var moniterTimer = null;
+
+$(function() {
+	adjust("chart0");
+	adjust("chart1");
+	adjust("chart2");
+	initChart();
+});
+
+function initChart() {
+	templateId = $("input[name='templateId']").val();
+	employ = Number($("input[name='employ']").val());
+	deviceNum = $("input[name='deviceNum']").val();
+	
+	if(employ){
+		$.ajax({
+			url : "./getSpectraPreParaCopy",//当前地址为/Tsme/spectra/chart
+			type : "POST",
+			async : true,
+			data : {deviceNum:deviceNum},
+			dataType : 'json',
+			success : function(data) {
+				if(data != null){
+					templateName = data.templateName;
+					longitude = data.longitude;
+					latitude = data.latitude;
+					fftSize = data.fftSize;
+					bandWidth = data.bandWidth;
+					maxMeans = data.maxMeans;
+					var frequencyList = data.frequencyList;			
+					var warningLineMap = data.warningLineMap;
+					
+					if(data.myself) {
+						$("#startButtom").show();
+						$("#stopButtom").show();
+					} else {
+						$("#startButtom").hide();
+						$("#stopButtom").hide();
+					}
+					
+					for(var i = 0; i < frequencyList.length; i ++){
+						if(i % 2 == 0){
+							var startFrequency = frequencyList[i].toFixed(1);
+							var stopFrequency = frequencyList[i + 1].toFixed(1);
+							var key = startFrequency.toString() + "-" + stopFrequency.toString();
+							
+							var subTitle = "经度：" + longitude + "；纬度：" + latitude + "；起始频率：" + startFrequency
+							+ "MHz；终止频率：" + stopFrequency + "MHz；FFT步长" + fftSize
+							+ "；测量频率：" + maxMeans + "Hz";
+							
+							switch (i) {
+							case 0:
+								hightchart0(subTitle, startFrequency, stopFrequency);
+								key0 = startFrequency + "-" + stopFrequency;
+								chart0.addSeries({                       
+								    id: "warningLine",
+								    name: "预警曲线",
+								    color: 'red',
+								    type: 'line',
+								    visible: true,
+								    data: warningLineMap[key]
+								},true);
+								chart0.addSeries({                       
+								    id: "realTime",
+								    name: "实时谱线",
+								    type: 'line',
+								    visible: true,
+								    data: 0
+								},true);
+								break;
+							case 2:
+								hightchart1(subTitle, startFrequency, stopFrequency);
+								key1 = startFrequency + "-" + stopFrequency;
+								chart1.addSeries({                       
+								    id: "warningLine",
+								    name: "预警曲线",
+								    color: 'red',
+								    type: 'line',
+								    visible: true,
+								    data: warningLineMap[key]
+								},true);
+								chart1.addSeries({                       
+								    id: "realTime",
+								    name: "实时谱线",
+								    type: 'line',
+								    visible: true,
+								    data: 0
+								},true);
+								break;
+							case 4:
+								hightchart2(subTitle, startFrequency, stopFrequency);
+								key2 = startFrequency + "-" + stopFrequency;
+								chart2.addSeries({                       
+								    id: "warningLine",
+								    name: "预警曲线",
+								    color: 'red',
+								    type: 'line',
+								    visible: true,
+								    data: warningLineMap[key]
+								},true);
+								chart2.addSeries({                       
+								    id: "realTime",
+								    name: "实时谱线",
+								    type: 'line',
+								    visible: true,
+								    data: 0
+								},true);
+								break;
+							}
+						}
+					}
+					
+					setTimeout(function(){
+						moniterTimer = setInterval(function() {
+							getMonitorData();
+						}, 500);
+					},500);
+				}
+			}
+		})
+	} else {
+		$.ajax({
+			url : "./getSpectraPrePara",//当前地址为/Tsme/spectra/chart
+			type : "POST",
+			async : true,
+			data : {deviceNum:deviceNum, templateId:templateId},
+			dataType : 'json',
+			success : function(data) {
+				if(data != null){
+					templateName = data.templateName;
+					longitude = data.longitude;
+					latitude = data.latitude;
+					fftSize = data.fftSize;
+					bandWidth = data.bandWidth;
+					maxMeans = data.maxMeans;
+					var frequencyList = data.frequencyList;
+					var warningLineMap = data.warningLineMap;
+					
+					if(data.myself) {
+						$("#startButtom").show();
+						$("#stopButtom").show();
+					} else {
+						$("#startButtom").hide();
+						$("#stopButtom").hide();
+					}
+					
+					for(var i = 0; i < frequencyList.length; i ++){
+						if(i % 2 == 0){
+							var startFrequency = frequencyList[i].toFixed(1);
+							var stopFrequency = frequencyList[i + 1].toFixed(1);
+							var key = startFrequency + "-" + stopFrequency;
+							
+							var subTitle = "经度：" + longitude + "；纬度：" + latitude + "；起始频率：" + startFrequency
+							+ "MHz；终止频率：" + stopFrequency + "MHz；FFT步长" + fftSize
+							+ "；测量频率：" + maxMeans + "Hz";
+							
+							switch (i) {
+							case 0:
+								hightchart0(subTitle, startFrequency, stopFrequency);
+								key0 = startFrequency + "-" + stopFrequency;
+								chart0.addSeries({                       
+								    id: "warningLine",
+								    name: "预警曲线",
+								    color: 'red',
+								    type: 'line',
+								    visible: true,
+								    data: warningLineMap[key]
+								},true);
+								break;
+							case 2:
+								hightchart1(subTitle, startFrequency, stopFrequency);
+								key1 = startFrequency + "-" + stopFrequency;
+								chart1.addSeries({                       
+								    id: "warningLine",
+								    name: "预警曲线",
+								    color: 'red',
+								    type: 'line',
+								    visible: true,
+								    data: warningLineMap[key]
+								},true);
+								break;
+							case 4:
+								hightchart2(subTitle, startFrequency, stopFrequency);
+								key2 = startFrequency + "-" + stopFrequency;
+								chart2.addSeries({                       
+								    id: "warningLine",
+								    name: "预警曲线",
+								    color: 'red',
+								    type: 'line',
+								    visible: true,
+								    data: warningLineMap[key]
+								},true);
+								break;
+							}
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+function adjust(id) {
+	
+	$('#' + id).css('width', $(window).width() - 610);
+
+}
+
+function hightchart0(subTitle, startFrequency, stopFrequency) {
+	chart0 = new Highcharts.Chart({
+		chart : {
+			backgroundColor : '#FDF5E6',
+			renderTo : 'chart0', // 图表放置的容器，DIV
+			defaultSeriesType : 'line', // 图表类型为折线图
+			zoomType : 'xy',
+			events : {
+				load : function() {
+					var series = this.series[0];
+				}
+			}
+		},
+		title : {
+			text : templateName + '模板下的实时频谱图'  // 图表标题
+		},
+		subtitle: {
+			text: subTitle
+		},
+		xAxis : { // 设置X轴
+			max : stopFrequency, // x轴最大值
+			min : startFrequency,
+			gridLineColor : '#999',
+			gridLineWidth : 1,
+			// tickPixelInterval : 100, //X轴标签间隔
+			tickInterval : xtick,
+			title : {
+				text : '频率[MHz]'
+			}
+		},
+		yAxis : { // 设置Y轴
+			max : ymax, //Y轴最大值 
+			min : ymin, // Y轴最小值
+			// tickPixelInterval : 100,//y轴标签间隔
+			tickInterval : ytick,
+			title : {
+				text : '电平值[dBm]'
+			}
+		},
+		legend : {
+			layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderWidth: 0
+            /*layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            borderWidth: 0*/
+		},
+		credits : {
+			text : '频谱图' // 设置LOGO区文字
+		}
+	});
+}
+
+function hightchart1(subTitle, startFrequency, stopFrequency) {
+	chart1 = new Highcharts.Chart({
+		chart : {
+			backgroundColor : '#FDF5E6',
+			renderTo : 'chart1', // 图表放置的容器，DIV
+			defaultSeriesType : 'line', // 图表类型为折线图
+			zoomType : 'xy',
+			events : {
+				load : function() {
+					var series = this.series[0];
+				}
+			}
+		},
+		title : {
+			text : templateName + '模板下的实时频谱图'  // 图表标题
+		},
+		subtitle: {
+			text: subTitle
+		},
+		xAxis : { // 设置X轴
+			max : stopFrequency, // x轴最大值
+			min : startFrequency,
+			gridLineColor : '#999',
+			gridLineWidth : 1,
+			// tickPixelInterval : 100, //X轴标签间隔
+			tickInterval : xtick,
+			title : {
+				text : '频率[MHz]'
+			}
+		},
+		yAxis : { // 设置Y轴
+			max : ymax, //Y轴最大值 
+			min : ymin, // Y轴最小值
+			// tickPixelInterval : 100,//y轴标签间隔
+			tickInterval : ytick,
+			title : {
+				text : '电平值[dBm]'
+			}
+		},
+		legend : {
+			layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderWidth: 0
+            /*layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            borderWidth: 0*/
+		},
+		credits : {
+			text : '频谱图' // 设置LOGO区文字
+		}
+	});
+}
+
+function hightchart2(subTitle, startFrequency, stopFrequency) {
+	chart2 = new Highcharts.Chart({
+		chart : {
+			backgroundColor : '#FDF5E6',
+			renderTo : 'chart2', // 图表放置的容器，DIV
+			defaultSeriesType : 'line', // 图表类型为折线图
+			zoomType : 'xy',
+			events : {
+				load : function() {
+					var series = this.series[0];
+				}
+			}
+		},
+		title : {
+			text : templateName + '模板下的实时频谱图'  // 图表标题
+		},
+		subtitle: {
+			text: subTitle
+		},
+		xAxis : { // 设置X轴
+			max : stopFrequency, // x轴最大值
+			min : startFrequency,
+			gridLineColor : '#999',
+			gridLineWidth : 1,
+			// tickPixelInterval : 100, //X轴标签间隔
+			tickInterval : xtick,
+			title : {
+				text : '频率[MHz]'
+			}
+		},
+		yAxis : { // 设置Y轴
+			max : ymax, //Y轴最大值 
+			min : ymin, // Y轴最小值
+			// tickPixelInterval : 100,//y轴标签间隔
+			tickInterval : ytick,
+			title : {
+				text : '电平值[dBm]'
+			}
+		},
+		legend : {
+			layout: 'horizontal',
+            align: 'center',
+            verticalAlign: 'bottom',
+            borderWidth: 0
+            /*layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            borderWidth: 0*/
+		},
+		credits : {
+			text : '频谱图' // 设置LOGO区文字
+		}
+	});
+}
+
+function startMonitor() {
+	if (moniterTimer != null)
+		return;
+	
+	templateId = $("input[name='templateId']").val();
+	deviceNum = $("input[name='deviceNum']").val();
+	
+	$.ajax({
+		url : "./getSpectraPrePara",//用于重新开始的时候装填预备数据
+		type : "POST",
+		async : true,
+		data : {deviceNum:deviceNum, templateId:templateId},
+		dataType : 'json',
+		success : function() {
+			
+			$.ajax({
+				url : "/Tsme/spectra/startRealTimeMonitor",
+				type : "POST",
+				async : true,
+				data : $("#deviceParaForm").serialize(),
+				dataType : 'json',
+				success : function(data) {
+					if(data != null){
+						if (!data.result) {
+							layer.alert("已经有客户端在监控此设备，您仅可以查看此设备的监控数据!");
+						}
+						
+						setTimeout(function(){
+							moniterTimer = setInterval(function() {
+								getMonitorData();
+							}, 500);
+						},500);
+					}
+				}
+			})
+			
+		}
+	});
+	
+}
+
+function getMonitorData() {
+	$.ajax({
+		url : "/Tsme/spectra/getRealTimeMonitorData",
+		type : "POST",
+		data : {deviceNum:deviceNum},
+		dataType : 'json',
+		success : function(data) {
+			if(data != null){	
+				var dataMap = data;	
+				
+				var spDataMap = dataMap.spDataMap;
+				var warnDataMap = dataMap.warnDataMap;
+				
+				for (var key in spDataMap){
+					
+					var frequency = key.split("-");
+					var start = parseFloat(frequency[0]);
+					var stop = parseFloat(frequency[1]);
+					
+					switch (key) {
+					case key0:
+						if(spDataMap[key] != null){
+							if(chart0.get("realTime") == null){
+								chart0.addSeries({                       
+								    id: "realTime",
+								    name: "实时谱线",
+								    color: 'blue',
+								    type: 'line',
+								    visible: true,
+								    data: spDataMap[key]
+								},true);
+							}
+							chart0.get("realTime").setData(formatData(spDataMap[key], start, stop),true);
+						}
+						
+						$("#warningData0").empty();
+						count = 1;
+						var warningData0 = warnDataMap[key];
+						for(var i = 0 ; i < warningData0.length; i ++){
+							if(warningData0[i].number > 2){
+								$("#warningData0").append(
+									"<span style='width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + count + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData0[i].startFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData0[i].stopFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData0[i].centerFrequency + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData0[i].number + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData0[i].currentTime + "</span>" + 
+									"<span style='width:12%; display:block; border-bottom:1px solid #F00;float:left; '>" + "<a data-toggle='modal' data-target='#editmode'>查看</a>" + "</span>"
+								);
+								count ++;
+							}
+						}
+							
+						break;
+					case key1:
+						if(spDataMap[key] != null){
+							if(chart1.get("realTime") == null){
+								chart1.addSeries({                       
+								    id: "realTime",
+								    name: "实时谱线",
+								    color: 'blue',
+								    type: 'line',
+								    visible: true,
+								    data: spDataMap[key]
+								},true);
+							}
+							chart1.get("realTime").setData(formatData(spDataMap[key], start, stop),true);
+						}
+						
+						$("#warningData1").empty();
+						count = 1;
+						var warningData1 = warnDataMap[key];
+						for(var i = 0 ; i < warningData1.length; i ++){
+							if(warningData1[i].number > 2){
+								$("#warningData1").append(
+									"<span style='width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + count + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData1[i].startFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData1[i].stopFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData1[i].centerFrequency + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData1[i].number + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData1[i].currentTime + "</span>" + 
+									"<span style='width:12%; display:block; border-bottom:1px solid #F00;float:left; '>" + "<a data-toggle='modal' data-target='#editmode'>查看</a>" + "</span>"
+								);
+								count ++;
+							}
+						}
+						
+						break;
+					case key2:
+						if(spDataMap[key] != null){
+							if(chart2.get("realTime") == null){
+								chart2.addSeries({                       
+								    id: "realTime",
+								    name: "实时谱线",
+								    color: 'blue',
+								    type: 'line',
+								    visible: true,
+								    data: spDataMap[key]
+								},true);
+							}
+							chart2.get("realTime").setData(formatData(spDataMap[key], start, stop),true);
+						}
+						
+						$("#warningData2").empty();
+						count = 1;
+						var warningData2 = warnDataMap[key];
+						for(var i = 0 ; i < warningData2.length; i ++){
+							if(warningData2[i].number > 2){
+								$("#warningData2").append(
+									"<span style='width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + count + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData2[i].startFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData2[i].stopFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData2[i].centerFrequency + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData2[i].number + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData2[i].currentTime + "</span>" + 
+									"<span style='width:12%; display:block; border-bottom:1px solid #F00;float:left; '>" + "<a data-toggle='modal' data-target='#editmode'>查看</a>" + "</span>"
+								);
+								count ++;
+							}
+						}
+						
+						break;
+					}
+				}
+				
+				/*
+				$("#warningData").empty();
+				count = 1;
+				for (var key in warnDataMap){
+					var warningData = new Array();
+					warningData = warnDataMap[key];
+					for(var i = 0 ; i < warningData.length; i ++){
+						
+						if(warningData[i].number > 1){
+							$("#warningData").append(
+									"<span style='width:8%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + count + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData[i].startFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData[i].stopFrequency + "</span>" + 
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData[i].centerFrequency + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData[i].number + "</span>" +
+									"<span style='width:16%; display:block; border-right:1px solid #F00;float:left; border-bottom:1px solid #F00; '>" + warningData[i].currentTime + "</span>" + 
+									"<span style='width:12%; display:block; border-bottom:1px solid #F00;float:left; '>" + "<a data-toggle='modal' data-target='#editmode'>查看</a>" + "</span>"
+								);
+								
+								count ++;
+						}
+					}
+				}*/
+			}
+			//console.log("return null");
+		}
+	})
+}
+
+function stopMonitor() {
+	if (moniterTimer != null) {
+		$.ajax({
+			url : "/Tsme/spectra/stopRealTimeMonitor",
+			type : "POST",
+			data : {deviceNum:deviceNum},
+			dataType : 'json',
+			success : function(data) {
+				//console.log(data);
+				if (!data.result) {
+					layer.alert("已经有客户端在监控此设备，您仅可以查看此设备的监控数据!");
+				} else {
+					clearInterval(moniterTimer);
+					
+					moniterTimer = null;
+				}
+			}
+		})
+	}
+}
+
+function formatData(arrObj, start, stop){
+	var data = [];
+	if(arrObj != null) {
+		var len = arrObj.length;
+		var step = parseFloat(Number((stop-start)/len).toFixed(4));
+		var data = [];
+	    for (i = 0; i <len; i++) { 
+	   		data[i]=[start,arrObj[i]];
+			start += step; 
+	    }
+	}
+    //console.log(data);
+    return data; 
+}
+
+function changeDevice() {
+	stopMonitor();
+}

@@ -1,0 +1,8 @@
+
+.btn-primary{ margin-right:15px; }
+.control-label{ font-weight:inherit}
+.form-control{ height:32px;}
+.btn-default{ color:#337ab7}
+.label-width{ width:180px; text-align:right}
+.form-width{ width:275px; display:inline-block}
+

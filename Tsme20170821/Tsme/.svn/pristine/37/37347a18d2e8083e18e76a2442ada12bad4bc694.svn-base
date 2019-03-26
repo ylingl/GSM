@@ -1,0 +1,8 @@
+package logic.client;
+
+public interface ClientService {
+
+	//解析数据包
+	
+	//缓存上传的实时监控数据
+}

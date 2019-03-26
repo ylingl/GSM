@@ -1,0 +1,170 @@
+package utils.task;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import logic.data.DataAnalysis;
+import tsme.table.trainingData.bean.TRAININGDATA;
+import utils.DataPoolTools;
+import utils.GTime;
+import utils.file.FileUtil;
+
+/**
+ * 数据存储处理，存储为js文件，供前台js调用
+ * 
+ * @author kin
+ *
+ */
+public class TrainingDataFile implements Runnable {
+
+	// 客户端上传的实时监控数据缓冲池
+	//public static Queue<List<Double>> monitorDataPool = new LinkedList<List<Double>>();
+	
+	private DataAnalysis dataAnalysis;
+	
+	private String deviceNum;
+	
+	private boolean isRunning = false;
+	// 文件存储根目录
+	private static String js_root_dir = "d:\\";
+	// 每个文件内的数据行数
+	private static final int totalRowsOneFile = 20;
+
+	private static final int sleepTime = 1000 * 5 * 1;// 如果没有数据10秒检查一次
+	
+	public TrainingDataFile(DataAnalysis dataAnalysis, String deviceNum) {
+		this.dataAnalysis = dataAnalysis;
+		this.deviceNum = deviceNum;
+	}
+	
+	public TrainingDataFile(String rootPath) {
+		js_root_dir = rootPath;
+	}
+
+	// 保存为文件
+	@Override
+	public void run() {
+		
+		if(isRunning)
+			return;
+		
+		isRunning = true;
+		
+		while (DataPoolTools.monitorDeviceMap.get(deviceNum).isTraining()) {
+			
+			DataPoolTools.clearOverTimeMonitor();//触发清除所有超时的监控
+				
+			if (DataPoolTools.trainingDataPool.get(deviceNum).isEmpty()){
+				try {
+					Thread.sleep(1000);
+					System.out.println("开始休眠1秒");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				continue;
+			}
+			
+			Map<String, StringBuilder> mapToWriteFile = new HashMap<String, StringBuilder>();
+			
+			String var = GTime.getTime(GTime.YYYYMMDDhhmmssxxx);
+			
+			Set<String> keyList = DataPoolTools.trainingDataPool.get(deviceNum).keySet();
+			for(String key : keyList) {
+				if (DataPoolTools.trainingDataPool.get(deviceNum).get(key).size() >= totalRowsOneFile) {
+					// 生成文件
+					boolean initFlag = true;
+					StringBuilder sb = new StringBuilder();
+					
+					if(!mapToWriteFile.containsKey(key)) {
+						sb.append("var dataArray" + var + " = [\r\n");
+						initFlag = true;
+					}
+					
+					for(int count = 0; count < totalRowsOneFile; count ++) {
+						
+						if (!initFlag)
+							sb.append(",\r\n");
+						
+						initFlag = false;
+						
+						sb.append('[');
+						
+						List<Float> data = DataPoolTools.trainingDataPool.get(deviceNum).get(key).poll();
+						
+						for (int j = 0; j < data.size(); j++) {				
+							sb.append(data.get(j));
+							sb.append(",");
+						}
+						
+						sb.setCharAt(sb.length()-1, ']');
+						
+					}
+
+							
+					sb.append("\r\n");
+					sb.append("];");
+					
+					mapToWriteFile.put(key, sb);
+				}
+			}
+			
+			
+			Map<String, String> frequencyBandMap = DataPoolTools.monitorDeviceMap.get(deviceNum).getFrequencyBandMap();
+			for(String key : mapToWriteFile.keySet()) {
+				
+				StringBuilder sb = mapToWriteFile.get(key);
+				
+				String filePath = js_root_dir + "data\\" + deviceNum + "\\" + key + "\\" + var + ".js";
+				
+				FileUtil.saveFile(filePath, sb.toString());
+				System.out.println(filePath);
+				
+				//将文件路径保存到数据库
+				TRAININGDATA trainingData = new TRAININGDATA();
+				
+				trainingData.setFile_path(filePath);
+				trainingData.setFrequencyBand_id(frequencyBandMap.get(key));
+				trainingData.setActive(true);
+				trainingData.setCreate_time(System.currentTimeMillis());
+				
+				dataAnalysis.saveTrainingData(trainingData);
+			}
+			
+			//休眠等待
+			try {
+				//System.out.println("开始休眠"+sleepTime/1000+"秒");
+				Thread.sleep(sleepTime);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}		
+	
+		DataPoolTools.monitorDeviceMap.remove(deviceNum);
+		DataPoolTools.trainingDataPool.remove(deviceNum);
+
+	}
+
+	// 写文本文件
+
+	// 读取文件大小
+
+	// 读取文件列表
+	public static ArrayList<String> getDataFileList() {
+		File dir = new File(js_root_dir + "data");
+		File[] listFile = dir.listFiles();
+		ArrayList<String> fileList = new ArrayList<String>();
+		for (int i = 0; i < listFile.length; i++) {
+			File file = listFile[i];
+			if(file.isFile() && file.getName().endsWith(".js"))
+				fileList.add(file.getName());
+		}
+		return fileList;
+	}
+
+	// 判断文件个数
+}

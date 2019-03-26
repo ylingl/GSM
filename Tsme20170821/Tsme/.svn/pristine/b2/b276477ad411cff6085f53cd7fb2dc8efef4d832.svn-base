@@ -1,0 +1,29 @@
+package mvc.spectra;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+public class SpectraData {
+	
+	private Map<String, ArrayList<Float>> spDataMap = new HashMap<String, ArrayList<Float>>();
+	
+	private Map<String, ArrayList<WarningData>> warnDataMap = new HashMap<String, ArrayList<WarningData>>();
+
+	public Map<String, ArrayList<Float>> getSpDataMap() {
+		return spDataMap;
+	}
+
+	public void setSpDataMap(Map<String, ArrayList<Float>> spDataMap) {
+		this.spDataMap = spDataMap;
+	}
+
+	public Map<String, ArrayList<WarningData>> getWarnDataMap() {
+		return warnDataMap;
+	}
+
+	public void setWarnDataMap(Map<String, ArrayList<WarningData>> warnDataMap) {
+		this.warnDataMap = warnDataMap;
+	}
+	
+}

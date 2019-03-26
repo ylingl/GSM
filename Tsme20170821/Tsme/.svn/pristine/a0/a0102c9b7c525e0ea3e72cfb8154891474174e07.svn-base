@@ -1,0 +1,27 @@
+package tsme.table.warningTemplate.DAO;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPracticeImpl;
+import tsme.table.frequencyBand.bean.FREQUENCYBAND;
+import tsme.table.warningTemplate.bean.WARNINGTEMPLATE;
+
+@Repository("warningTemplateDAO")
+public class WarningTemplateDAOImpl extends TsmeMainDAOPracticeImpl<WARNINGTEMPLATE> implements WarningTemplateDAO{
+
+	@SuppressWarnings("unchecked")
+	public WARNINGTEMPLATE findWarningTemplateByIdAndSortByStartFrequency(String warningTemplateId){
+		
+		String sql = "SELECT * FROM frequencyBand WHERE warningTemplate_id='" + warningTemplateId + "' AND active = 1 ORDER BY startFrequency";
+		List<FREQUENCYBAND> frequencyBandList = (List<FREQUENCYBAND>) findByQuery(sql, FREQUENCYBAND.class);
+		
+		WARNINGTEMPLATE warningTemplate = findActivatedById(warningTemplateId);
+		
+		warningTemplate.setFrequencyBandList(frequencyBandList);
+		
+		return warningTemplate;
+	}
+	
+}

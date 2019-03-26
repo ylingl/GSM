@@ -1,0 +1,19 @@
+package tsme.table.userRole.DAO;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import tsme.DAO.mainDAOPractice.TsmeMainDAOPracticeImpl;
+import tsme.table.userRole.bean.USERROLE;
+
+@Repository("userRoleDAO")
+public class UserRoleDAOImpl extends TsmeMainDAOPracticeImpl<USERROLE> implements UserRoleDAO{
+
+	@SuppressWarnings("unchecked")
+	public List<USERROLE> findByForeignKey(String foreignKey){
+		String sql = "SELECT * FROM userrole WHERE account_id='" + foreignKey +"'";
+		
+		return (List<USERROLE>) findByQuery(sql, USERROLE.class);
+	}
+}

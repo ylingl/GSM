@@ -1,0 +1,326 @@
+package mvc.data;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import logic.data.DataAnalysis;
+import net.sf.json.JSONObject;
+import tsme.table.frequencyBand.bean.FREQUENCYBAND;
+import tsme.table.warningTemplate.bean.WARNINGTEMPLATE;
+import utils.AddressTool;
+import utils.ClearHttpSessionAttribute;
+import utils.DataPoolTools;
+import utils.MonitorParameter;
+import utils.MonitorParameter.status_enum;
+import utils.ResponseTools;
+import utils.task.TrainingDataFile;
+
+@Controller
+public class DataAnalysisController {
+	
+	@Autowired
+	@Qualifier("dataAnalysisService")
+	DataAnalysis dataAnalysis;
+	
+	//public static String fileName = "D:\\workspace\\space-mvc\\Tsme\\WebContent\\data\\160118085159.js";
+	public static String fileName = "C:\\workspace\\Tsme\\WebContent\\data\\160118085159.js";
+	
+	//此链接应放于地图中的设备弹窗上(加一个“训练预警模型”链接)，deviceId为device表的ID，WarningTemplate的父级表是device，此方法仅用于跳转页面
+	@RequestMapping("warningTemplate/{deviceNum}")
+	public ModelAndView template(@PathVariable("deviceNum") String deviceNum, HttpSession httpSession, HttpServletRequest request, HttpServletResponse response) {
+		
+		ModelAndView mav = new ModelAndView();
+		
+		new ClearHttpSessionAttribute(httpSession);
+		httpSession.setAttribute("currentDeviceNum", deviceNum);
+		httpSession.setAttribute("currentClientId", AddressTool.getRemoteIPAddr(request));
+		
+		mav.setViewName("warningTemplate");
+		return mav;
+	}
+	
+	//点击开始按钮后的响应方法，创建WarningTemplate数据，创建数据存储文件，并开始记录数据。warningTemplateRecPara来自于点击开始后弹出的设备参数填写框
+	//返回参数显示在左上角区域
+	@RequestMapping("startRecord")
+	public void startRecord(WarningTemplateRecPara warningTemplateRecPara, HttpSession httpSession, HttpServletResponse response){
+		
+		String deviceNum = (String) httpSession.getAttribute("currentDeviceNum");
+		String clientId = (String) httpSession.getAttribute("currentClientId");
+		
+		JSONObject jsObj = new JSONObject();
+		
+		//仅能进行唯一的训练，不允许同时开启多个训练
+		if(DataPoolTools.monitorDeviceMap.get(deviceNum) != null){
+			
+			jsObj.put("result", false);
+			jsObj.put("type", 1);
+			
+			ResponseTools.writeResponse(response, jsObj.toString());
+			
+			return;
+		}
+		
+		if(!DataPoolTools.monitorReportStatusMap.containsKey(deviceNum)){
+			
+			jsObj.put("result", false);
+			jsObj.put("type", 2);
+			
+			ResponseTools.writeResponse(response, jsObj.toString());
+			
+			return;
+			
+		}
+		
+		WARNINGTEMPLATE warningTemplate = dataAnalysis.createWarningTemplate(warningTemplateRecPara, httpSession);
+		//尚缺创建文件与originalData保存操作，originalData表改一下，只存路径。开始后原始数据每隔20组数据显示一组，共显示100组
+		
+		//下面的方法类似 SpectraController.realTimeMonitorStart
+		//转换为数据监测对象（保持和因为c++客户端请求的一样，方便调试）
+		MonitorParameter monitorParameter = new MonitorParameter();
+		monitorParameter.setClientId(clientId);
+		monitorParameter.setBandWidth(warningTemplate.getBandWidth());
+		
+		HashMap<String, Queue<ArrayList<Float>>> trainingDataMap = new HashMap<String, Queue<ArrayList<Float>>>();
+		HashMap<String, Queue<ArrayList<Float>>> showDataMap = new HashMap<String, Queue<ArrayList<Float>>>();
+		
+		List<Float> frequencyList = new ArrayList<Float>();
+		if(warningTemplateRecPara.getStopFrequency0() > 0) {
+			frequencyList.add(warningTemplateRecPara.getStartFrequency0());
+			frequencyList.add(warningTemplateRecPara.getStopFrequency0());
+			trainingDataMap.put(warningTemplateRecPara.getStartFrequency0() + "-" + warningTemplateRecPara.getStopFrequency0(), new LinkedList<ArrayList<Float>>());
+			showDataMap.put(warningTemplateRecPara.getStartFrequency0() + "-" + warningTemplateRecPara.getStopFrequency0(), new LinkedList<ArrayList<Float>>());
+		}
+		if(warningTemplateRecPara.getStopFrequency1() > 0) {
+			frequencyList.add(warningTemplateRecPara.getStartFrequency1());
+			frequencyList.add(warningTemplateRecPara.getStopFrequency1());
+			trainingDataMap.put(warningTemplateRecPara.getStartFrequency1() + "-" + warningTemplateRecPara.getStopFrequency1(), new LinkedList<ArrayList<Float>>());
+			showDataMap.put(warningTemplateRecPara.getStartFrequency1() + "-" + warningTemplateRecPara.getStopFrequency1(), new LinkedList<ArrayList<Float>>());
+		}
+		if(warningTemplateRecPara.getStopFrequency2() > 0) {
+			frequencyList.add(warningTemplateRecPara.getStartFrequency2());
+			frequencyList.add(warningTemplateRecPara.getStopFrequency2());
+			trainingDataMap.put(warningTemplateRecPara.getStartFrequency2() + "-" + warningTemplateRecPara.getStopFrequency2(), new LinkedList<ArrayList<Float>>());
+			showDataMap.put(warningTemplateRecPara.getStartFrequency2() + "-" + warningTemplateRecPara.getStopFrequency2(), new LinkedList<ArrayList<Float>>());
+		}
+		monitorParameter.setFrequencyList(frequencyList);
+		
+		Map<String, String> frequencyBandMap = new HashMap<String, String>();
+		for(FREQUENCYBAND temp : warningTemplate.getFrequencyBandList()){
+			frequencyBandMap.put(temp.getStartFrequency() + "-" + temp.getStopFrequency(), temp.getId());
+		}
+		monitorParameter.setFrequencyBandMap(frequencyBandMap);
+		
+		monitorParameter.setFftSize(warningTemplate.getFftSize());
+		monitorParameter.setMaxMeans(warningTemplate.getMaxMeans());
+		monitorParameter.setTemplateId(warningTemplate.getId());
+		monitorParameter.setOverTime_minute(2);//默认30分钟超时
+		monitorParameter.setStatus(status_enum.start);
+		monitorParameter.setTraining(true);
+		monitorParameter.setWarning(false);
+		
+		System.err.println(deviceNum + " == 开始监测数据"+deviceNum);
+		
+		monitorParameter.setLastPopDataTime(System.currentTimeMillis());
+		DataPoolTools.monitorDeviceMap.put(deviceNum, monitorParameter);
+		DataPoolTools.trainingDataPool.put(deviceNum, trainingDataMap);
+		DataPoolTools.showDataPool.put(deviceNum, showDataMap);
+		
+		Thread thread = new Thread(new TrainingDataFile(dataAnalysis, deviceNum), deviceNum);
+		thread.start();
+		
+		//用于回显select
+		jsObj.put("template", warningTemplate);
+		jsObj.put("result", true);
+		
+		ResponseTools.writeResponse(response, jsObj.toString());
+	}
+
+	/**
+	 * @param httpSession
+	 * @param response
+	 * 如果httpSession中currentWarningTemplateId为空，则页面不可点击该按钮。
+	 * 此方法只设置training的状态，由文件保存线程处理数据停止。
+	 */
+	@RequestMapping("stopRecord")
+	public void stopRecord(HttpSession httpSession, HttpServletResponse response){
+		String deviceNum = (String) httpSession.getAttribute("currentDeviceNum");
+		String clientId = (String) httpSession.getAttribute("currentClientId");
+		
+		DataPoolTools.clearOverTimeMonitor();//触发清除其它超时的监控
+		
+		JSONObject jsObj = new JSONObject();
+		
+		if(DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){
+			//下面的方法类似 SpectraController.realTimeMonitorStop
+			MonitorParameter mp = DataPoolTools.monitorDeviceMap.get(deviceNum);
+			
+			if(mp.getClientId().equals(clientId)){
+				mp.setTraining(false);//只有主监控端 client,才能发送停止监控的请求
+				mp.setStatus(status_enum.stop);
+				
+				jsObj.put("result", true);
+				
+				if(DataPoolTools.trainingDataPool.containsKey(deviceNum)){
+					jsObj.put("writable", true);
+				} else {
+					jsObj.put("writable", false);
+				}
+			} else {
+				jsObj.put("result", false);
+			}
+		} else {
+			jsObj.put("result", true);
+		}
+		
+		ResponseTools.writeResponse(response, jsObj.toString());
+	}
+	
+	//如果httpSession中currentWarningTemplateId为空，则页面不可点击该按钮
+	@RequestMapping("deleteWarningTemplate/{warningTemplateId}")
+	public void deleteWarningTemplate(@PathVariable("warningTemplateId") String warningTemplate_id, HttpServletResponse response){
+
+		if(dataAnalysis.deleteWarningTemplate(warningTemplate_id)){
+			ResponseTools.writeResponse(response, "1");
+		} else{
+			ResponseTools.writeResponse(response, "0");
+		}
+
+	}
+	
+	//训练预警模型按钮响应事件，如果httpSession中currentWarningTemplateId为空，则页面不可点击该按钮，file关闭才可点击
+	@RequestMapping("createAvgData/{warningTemplateId}")
+	public void createAvgData(@PathVariable("warningTemplateId") String warningTemplateId, HttpServletResponse response){
+		
+		int rows = -1;
+		if(warningTemplateId != null){
+			rows = dataAnalysis.createAvgData(warningTemplateId);
+		}
+		
+		ResponseTools.writeResponse(response, String.valueOf(rows));
+	}
+	
+	//生成预警曲线按钮响应事件，如果httpSession中currentWarningTemplateId为空，则页面不可点击该按钮，有均值曲线后才可点击
+	//此处的模板id，需要从页面的下拉框中获取
+	@ResponseBody
+	@RequestMapping("createWarningLine/{warningTemplateId}/{baseRowNum}/{peakRowNum}")
+	public Map<String, List<List<Float>>> createWarningLine(@PathVariable("warningTemplateId") String warningTemplateId, @PathVariable("baseRowNum") int baseRowNum, @PathVariable("peakRowNum") int peakRowNum){
+		
+		dataAnalysis.createAvgExtreme(peakRowNum, warningTemplateId);
+		
+		dataAnalysis.createWaringLine(baseRowNum, peakRowNum, warningTemplateId);
+		
+		Map<String, List<List<Float>>> warningLine = dataAnalysis.getWarningLine(warningTemplateId);
+		
+		return warningLine;
+	}
+	
+	@ResponseBody
+	@RequestMapping("getWarningTemplatesWithStatus")
+	public WarningTemplatesWithStatus getWarningTemplatesWithStatus(HttpSession httpSession, HttpServletResponse response){
+		
+		String deviceNum = (String) httpSession.getAttribute("currentDeviceNum");
+		String currentClientId = (String) httpSession.getAttribute("currentClientId");
+		
+		WarningTemplatesWithStatus warningTemplatesWithStatus = new WarningTemplatesWithStatus();
+		
+		List<WARNINGTEMPLATE> warningTemplateList = dataAnalysis.getWarningTemplateListByDeviceNum(deviceNum);
+		warningTemplatesWithStatus.setWarningTemplateList(warningTemplateList);
+		
+		if(DataPoolTools.monitorDeviceMap.containsKey(deviceNum)){
+			
+			if(DataPoolTools.monitorDeviceMap.get(deviceNum).isTraining()){
+				
+				
+				
+			}
+			
+		}
+		
+		if(DataPoolTools.trainingDataPool.containsKey(deviceNum)){			
+			warningTemplatesWithStatus.setEmploy(true);
+			
+			String currentWarningTemplateId = DataPoolTools.monitorDeviceMap.get(deviceNum).getTemplateId();
+			for(WARNINGTEMPLATE warningTemplate : warningTemplateList){
+				if(warningTemplate.getId().equals(currentWarningTemplateId)){
+					warningTemplatesWithStatus.setCurrentwarningTemplate(warningTemplate);
+				}
+			}
+			
+			if(DataPoolTools.monitorDeviceMap.get(deviceNum).getClientId().equalsIgnoreCase(currentClientId)){
+				warningTemplatesWithStatus.setMyself(true);
+			} else {
+				warningTemplatesWithStatus.setMyself(false);
+			}
+		} else {
+			warningTemplatesWithStatus.setEmploy(false);
+			warningTemplatesWithStatus.setMyself(true);
+		}
+
+		return warningTemplatesWithStatus;
+	}
+	
+	/**
+	 * 获取均值曲线
+	 * @param row 获取多少条。如果是1则获取3条[最小值 最大值 第一条均值...]
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getAvgDataList/{warningTemplateId}/{row}")
+	public Map<String, List<List<List<Float>>>> getAvgDataList(@PathVariable("warningTemplateId") String warningTemplateId, @PathVariable("row") int row, HttpServletResponse response){
+		
+		Map<String, List<List<List<Float>>>> resultMap = dataAnalysis.getAvgDataList(warningTemplateId, row);
+		
+		return resultMap;
+	}
+	
+	/**
+	 * 获取一条极值点
+	 * @param row 获取第row条均值的极值点
+	 * @param response [{x,y},{x,y}...]
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("getAvgExtreme/{warningTemplateId}/{row}")
+	public Map<String, List<List<Float>>> getAvgExtreme(@PathVariable("warningTemplateId") String warningTemplateId, @PathVariable("row") int row, HttpServletResponse response){
+		
+		return dataAnalysis.getAvgExtreme(warningTemplateId, row);
+	}
+	
+	@ResponseBody
+	@RequestMapping("getWarningLine/{warningTemplateId}")
+	public Map<String, List<List<Float>>> getWarningLine(@PathVariable("warningTemplateId") String warningTemplateId, HttpServletResponse response){
+		
+		Map<String, List<List<Float>>> warningLine = dataAnalysis.getWarningLine(warningTemplateId);
+		
+		return warningLine;
+	}
+	
+	@ResponseBody
+	@RequestMapping("modifyWarningLine/{warningTemplateId}")
+	public List<List<Float>> modifyWarningLine(@PathVariable("warningTemplateId") String warningTemplateId, 
+			float startFrequency, float stopFrequency, float threshold, String groupNum,
+			HttpSession httpSession, HttpServletResponse response){
+		
+		List<List<Float>> warningLine = dataAnalysis.updateWarningLine(warningTemplateId, startFrequency, stopFrequency, threshold, groupNum);
+		
+		return warningLine;
+	}
+	
+}

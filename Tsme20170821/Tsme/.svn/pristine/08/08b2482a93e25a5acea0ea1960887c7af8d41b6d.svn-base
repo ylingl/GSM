@@ -1,0 +1,189 @@
+package mvc.client;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+
+import tsme.table.device.DAO.DeviceDAO;
+import tsme.table.device.bean.DEVICE;
+import tsme.table.deviceLocation.DAO.DeviceLocationDAO;
+import tsme.table.deviceLocation.bean.DEVICELOCATION;
+import utils.DataPoolTools;
+import utils.MonitorParameter;
+import utils.MonitorParameter.status_enum;
+
+/**
+ * 客户端传输数据使用
+ * @author kitty
+ */
+@Controller
+@RequestMapping("/device")
+public class DeviceController {
+	
+	@Autowired
+	@Qualifier("deviceDAO")
+	private DeviceDAO deviceDAO;
+	
+	@Autowired
+	@Qualifier("deviceLocationDAO")
+	private DeviceLocationDAO deviceLocationDAO;
+	
+	//设备接入
+	@ResponseBody
+	@RequestMapping("/deviceAccess")
+	public Response deviceAccess(ReportStatus reportStatus, HttpServletResponse response){
+		Response respMsg = new Response();
+		
+		if(reportStatus.getDevice_num() != null){
+			
+			DEVICE device = new DEVICE();
+			device.setDevice_num(reportStatus.getDevice_num());
+			device.setDevice_type(reportStatus.getDevice_type());
+			device.setActive(true);
+			device.setCreate_time(System.currentTimeMillis());
+			
+			DEVICELOCATION deviceLocation = new DEVICELOCATION();
+			deviceLocation.setDevice_id(device.getId());
+			deviceLocation.setLAT(reportStatus.getLatitude());
+			deviceLocation.setLNG(reportStatus.getLongitude());
+			deviceLocation.setActive(true);
+			deviceLocation.setCreate_time(System.currentTimeMillis());
+			
+			try{
+				if(reportStatus.getLongitude() > 0 && reportStatus.getLatitude() > 0){
+					deviceDAO.save(device);
+					respMsg.setCode(Response.resp_code_normal);
+				} else {
+					respMsg.setCode(Response.resp_code_error);
+				}
+				
+			} catch (Exception e){	
+				if(e.getCause() instanceof MySQLIntegrityConstraintViolationException){		
+					respMsg.setCode(Response.resp_code_normal);
+				} else {
+					respMsg.setCode(Response.resp_code_error);
+				}
+			}
+			
+			try{
+				if(reportStatus.getLongitude() > 0 && reportStatus.getLatitude() > 0){
+					deviceLocationDAO.save(deviceLocation);
+					respMsg.setCode(Response.resp_code_normal);
+				}
+			} catch (Exception d){
+				if(d.getCause() instanceof MySQLIntegrityConstraintViolationException){
+					respMsg.setCode(Response.resp_code_normal);
+				} else {
+					respMsg.setCode(Response.resp_code_error);
+				}	
+			}
+			
+		}
+		
+		return respMsg;
+	}
+	
+	
+	
+	//上报状态
+	@ResponseBody
+	@RequestMapping("/reportStatus")
+	public Response reportStatus(ReportStatus reportStatus, HttpServletResponse response){
+		
+		Response respMsg = new Response();
+		respMsg.setId(reportStatus.getDevice_num());
+		
+		DataPoolTools.monitorReportStatusMap.put(reportStatus.getDevice_num(), reportStatus);
+		
+		if(DataPoolTools.monitorDeviceMap.containsKey(reportStatus.getDevice_num())) {
+			//获取用户设定的设备参数
+			MonitorParameter monitorParameter = DataPoolTools.monitorDeviceMap.get(reportStatus.getDevice_num());
+			
+			if(reportStatus.getCode() == ReportStatus.report_code_para_req) {
+				//设备向服务器请求用户设定的参数
+				if(monitorParameter.getStatus().equals(status_enum.start)
+					|| monitorParameter.getStatus().equals(status_enum.transfer)){
+						
+					respMsg.setCode(Response.resp_code_begin_monitor);
+						
+					ResponseData data = new ResponseData();
+					data.setMaxMeans(monitorParameter.getMaxMeans());
+					data.setFrequencyList(monitorParameter.getFrequencyList());
+					data.setFftSize(monitorParameter.getFftSize());
+					data.setBandWidth(monitorParameter.getBandWidth());
+					data.setInterval(monitorParameter.getInterval());
+					respMsg.setData(data);
+						
+					//monitorParameter.setStatus(status_enum.transfer);
+					//System.out.println(reportStatus.getDevice_num() + " 通知设备上传数据");
+					
+					monitorParameter.setStatus(status_enum.transfer);
+					
+				} else if(monitorParameter.getStatus().equals(status_enum.stop) 
+					|| monitorParameter.getStatus().equals(status_enum.stopped) 
+					|| monitorParameter.isMainClientOverTime()){
+					/** 状态为需要停止，则通知设备不用上传数据了;
+					 *  超时时限需要在开启检测时设置
+					 */
+					System.out.println(reportStatus.getDevice_num() + " 通知设备停止上传数据");
+					monitorParameter.setStatus(status_enum.stopped);
+					respMsg.setCode(Response.resp_code_stop_monitor);
+				}
+				
+			} else if(reportStatus.getCode() == ReportStatus.report_code_normal){
+				
+				respMsg.setCode(Response.resp_code_normal);
+				
+			}
+			
+		} else {
+			
+			respMsg.setCode(Response.resp_code_normal);
+			
+		}
+		
+		return respMsg;
+	}
+	
+	//上传实时监测数据
+	@ResponseBody
+	@RequestMapping("/sendRealTimeData")
+	public Response sendRealTimeData(ReportSpectrum repSpec, HttpServletResponse response){
+		
+		Response respMsg = new Response();
+		respMsg.setId(repSpec.getDevice_num());
+		
+		/** 要存储实时数据，就需要在开启监测的时候创建monitorDeviceMap与monitorDataPool
+		 * 
+		 */
+		if(DataPoolTools.monitorDeviceMap.containsKey(repSpec.getDevice_num())) {
+			//获取用户设定的设备参数
+			MonitorParameter monitorPara = DataPoolTools.monitorDeviceMap.get(repSpec.getDevice_num());
+			
+			if(monitorPara.getStatus().equals(status_enum.transfer)){
+				monitorPara.setLastPopDataTime(System.currentTimeMillis());
+				//将频谱数据保存至数据池中
+				repSpec.addSpectrumToPool();
+				
+				//long nowTime = System.currentTimeMillis();
+				//System.out.println(GTime.getTime(GTime.YYYYMMDDhhmmss)+"  "+ request.getId()+ " 上传数据后缓冲池数量： "+queue.size() +" 距离上次上传数据时间间隔毫秒数：" + (nowTime - lastTime));
+				//lastTime = nowTime;
+				respMsg.setCode(Response.resp_code_normal);
+			} else {
+				respMsg.setCode(Response.resp_code_status_error);
+			}
+		} else {
+			//监控设备池已经没有这个监控设备了，则通知设备停止上传
+			respMsg.setCode(Response.resp_code_monitor_vacant);
+		}
+		
+		return respMsg;
+	}
+		
+}

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+	<display-name>Tsme</display-name>
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:contextConfig/applicationContext*.xml,
+			classpath:contextLogin/applicationContext*.xml,
+			classpath:contextMap/applicationContext*.xml,
+			classpath:contextSpectra/applicationContext*.xml,
+			classpath:contextData/applicationContext*.xml,
+			classpath:contextTsme/applicationContext*.xml,
+			classpath:contextSecurity/applicationContext*.xml,
+			classpath:contextAccount/applicationContext*.xml</param-value>
+	</context-param>
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener
+		</listener-class>
+	</listener>
+	
+	<!-- if save file uncomment this
+	<servlet>
+	    <servlet-name>StartFileSaveThread</servlet-name>
+	    <servlet-class>utils.task.FileSaveServlet</servlet-class>
+	    <load-on-startup>5</load-on-startup>
+	</servlet>
+	 -->
+	
+	<servlet>
+		<servlet-name>mvcTsme</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletTsme/servlet*.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcTsme</servlet-name>
+		<url-pattern>/tsme/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcLogin</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletLogin/servlet*.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcLogin</servlet-name>
+		<url-pattern>/login/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcMap</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletMap/servlet*.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcMap</servlet-name>
+		<url-pattern>/map/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcSpectra</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletSpectra/servlet-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcSpectra</servlet-name>
+		<url-pattern>/spectra/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcData</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletData/servlet-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcData</servlet-name>
+		<url-pattern>/data/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcConfig</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletConfig/servlet-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcConfig</servlet-name>
+		<url-pattern>/config/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcAccount</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletAccount/servlet-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcAccount</servlet-name>
+		<url-pattern>/account/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcClient</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletClient/servlet-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcClient</servlet-name>
+		<url-pattern>/client/*</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>mvcSecurity</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:servletSecurity/servlet-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>mvcSecurity</servlet-name>
+		<url-pattern>/security/*</url-pattern>
+	</servlet-mapping>
+	
+	<filter>
+    	<filter-name>Set Character Encoding</filter-name>
+    	<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    	<init-param>
+			<param-name>encoding</param-name>
+      		<param-value>utf8</param-value>
+    	</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>Set Character Encoding</filter-name>
+		<url-pattern>/tsme/*</url-pattern>
+	</filter-mapping>
+	<!-- <filter>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping> -->
+</web-app>
